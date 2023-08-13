@@ -8,7 +8,7 @@ run:
 	@go run cmd/api/main.go
 
 test:
-	@go test ./...
+	@go test ./... -v
 
 # Build the application
 build:

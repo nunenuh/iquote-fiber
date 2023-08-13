@@ -2,35 +2,29 @@ package database
 
 import (
 	"fmt"
-	"strconv"
+	"time"
 
-	"github.com/nunenuh/iquote-fiber/config"
+	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func ConnectDB() {
-	var err error
-	p := config.Config("DB_PORT")
-	port, err := strconv.ParseUint(p, 10, 32)
+func Connection() (db *gorm.DB) {
 
+	host := viper.Get("DB_HOST")
+	user := viper.Get("DB_USER")
+	pass := viper.Get("DB_PASS")
+	dbname := viper.Get("DB_NAME")
+	dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
+		host, user, pass, dbname)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Failed to parse database port")
+		panic(err)
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		config.Config("DB_HOST"),
-		port, config.Config("DB_USER"),
-		config.Config("DB_PASSWORD"),
-		config.Config("DB_NAME"))
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
-	if err != nil {
-		panic("Failed to connect to database")
-	}
-
-	// fmt.Println("Connection Opened to Database")
-	// DB.AutoMigrate(&model.Product{}, &model.User{})
-	// fmt.Println("Database migrated!")
-
+	sqlDB, err := db.DB()
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+	return db
 }
