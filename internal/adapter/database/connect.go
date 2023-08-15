@@ -4,27 +4,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/config"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func Connection() (db *gorm.DB) {
-
-	host := viper.Get("DB_HOST")
-	user := viper.Get("DB_USER")
-	pass := viper.Get("DB_PASS")
-	dbname := viper.Get("DB_NAME")
+func Connection(config config.Configuration) (db *gorm.DB, err error) {
 	dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		host, user, pass, dbname)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		config.DBHost, config.DBUser, config.DBPass, config.DBName)
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	sqlDB, err := db.DB()
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
-	return db
+	db.AutoMigrate(&model.User{})
+	return db, err
 }
