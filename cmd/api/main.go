@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/config"
@@ -51,7 +52,8 @@ func main() {
 			})
 		},
 	}))
-	// app.Use(logger.New())
+
+	app.Use(logger.New())
 	app.Use(recover.New())
 	app.Use(requestid.New())
 
