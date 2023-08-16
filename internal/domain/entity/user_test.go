@@ -10,7 +10,7 @@ import (
 func TestUser(t *testing.T) {
 	now := time.Now()
 	user := User{
-		ID:          1,
+		ID:          "1",
 		Username:    "john_doe",
 		Password:    "password123",
 		FullName:    "John Doe",
@@ -24,7 +24,7 @@ func TestUser(t *testing.T) {
 		IsDeleted:   false,
 	}
 
-	assert.Equal(t, 1, user.ID, "Expected ID = %v, but got %v")
+	assert.Equal(t, "1", user.ID, "Expected ID = %v, but got %v")
 	assert.Equal(t, "john_doe", user.Username, "Expected Username = %v, but got %v")
 	assert.Equal(t, "password123", user.Password, "Expected Password = %v, but got %v")
 	assert.Equal(t, "John Doe", user.FullName, "Expected Name = %v, but got %v")

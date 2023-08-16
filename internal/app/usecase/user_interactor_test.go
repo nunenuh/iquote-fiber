@@ -11,15 +11,35 @@ import (
 
 type UserRepositoryMock struct {
 	GetByIDFunc func(ID int) (*entity.User, error)
+	GetAllFunc  func(limit int, offset int) ([]*entity.User, error)
+	CreateFunc  func(user *entity.User) (*entity.User, error)
+	UpdateFunc  func(ID int, user *entity.User) (*entity.User, error)
+	DeleteFunc  func(ID int) error
 }
 
 func (m *UserRepositoryMock) GetByID(ID int) (*entity.User, error) {
 	return m.GetByIDFunc(ID)
 }
 
+func (m *UserRepositoryMock) GetAll(limit int, offset int) ([]*entity.User, error) {
+	return m.GetAllFunc(limit, offset)
+}
+
+func (m *UserRepositoryMock) Create(user *entity.User) (*entity.User, error) {
+	return m.CreateFunc(user)
+}
+
+func (m *UserRepositoryMock) Update(ID int, user *entity.User) (*entity.User, error) {
+	return m.UpdateFunc(ID, user)
+}
+
+func (m *UserRepositoryMock) Delete(ID int) error {
+	return m.DeleteFunc(ID)
+}
+
 func TestUserUsecase_GetByID(t *testing.T) {
 	t.Run("User found", func(t *testing.T) {
-		expectedUser := &entity.User{ID: 1, FullName: "John Doe"}
+		expectedUser := &entity.User{ID: "1", FullName: "John Doe"}
 		repo := &UserRepositoryMock{
 			GetByIDFunc: func(ID int) (*entity.User, error) {
 				return expectedUser, nil
