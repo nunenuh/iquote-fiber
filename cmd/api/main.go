@@ -13,8 +13,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/config"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/controller"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/handler"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/repository"
 )
 
@@ -56,7 +56,9 @@ func main() {
 	app.Use(requestid.New())
 
 	userRepository := repository.NewUserRepository(db)
-	controller.NewUserController(app.Group("/api/v1/user"), userRepository)
+
+	handler.NewAuthHandler(app.Group("/api/v1/auth"), userRepository)
+	handler.NewUserHandler(app.Group("/api/v1/user"), userRepository)
 
 	// Prepare an endpoint for 'Not Found'.
 	app.All("*", func(c *fiber.Ctx) error {

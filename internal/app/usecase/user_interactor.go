@@ -15,6 +15,15 @@ func NewUserUsecase(r repository.IUserRepository) *UserUsecase {
 	}
 }
 
+func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*entity.User, error) {
+	u, err := ucase.repo.GetAll(limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 func (ucase *UserUsecase) GetByID(ID int) (*entity.User, error) {
 	u, err := ucase.repo.GetByID(ID)
 	if err != nil {
@@ -24,8 +33,17 @@ func (ucase *UserUsecase) GetByID(ID int) (*entity.User, error) {
 	return u, nil
 }
 
-func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*entity.User, error) {
-	u, err := ucase.repo.GetAll(limit, offset)
+func (ucase *UserUsecase) GetByUsername(username string) (*entity.User, error) {
+	u, err := ucase.repo.GetByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (ucase *UserUsecase) GetByEmail(email string) (*entity.User, error) {
+	u, err := ucase.repo.GetByEmail(email)
 	if err != nil {
 		return nil, err
 	}

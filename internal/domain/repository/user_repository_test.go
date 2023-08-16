@@ -9,28 +9,40 @@ import (
 )
 
 type mockUserRepository struct {
-	GetByIDFunc func(ID int) (*entity.User, error)
-	// Add mock functions for the other methods if needed
+	GetAllFunc        func(limit int, offset int) ([]*entity.User, error)
+	GetByIDFunc       func(ID int) (*entity.User, error)
+	GetByUsernameFunc func(username string) (*entity.User, error)
+	GetByEmailFunc    func(email string) (*entity.User, error)
+	CreateFunc        func(user *entity.User) (*entity.User, error)
+	UpdateFunc        func(ID int, user *entity.User) (*entity.User, error)
+	DeleteFunc        func(ID int) error
+}
+
+func (m *mockUserRepository) GetAll(limit int, offset int) ([]*entity.User, error) {
+	return m.GetAllFunc(limit, offset)
 }
 
 func (m *mockUserRepository) GetByID(ID int) (*entity.User, error) {
 	return m.GetByIDFunc(ID)
 }
 
-func (m *mockUserRepository) GetAll(limit int, offset int) ([]*entity.User, error) {
-	return m.GetAll(limit, offset)
+func (m *mockUserRepository) GetByUsername(username string) (*entity.User, error) {
+	return m.GetByUsernameFunc(username)
+}
+func (m *mockUserRepository) GetByEmail(email string) (*entity.User, error) {
+	return m.GetByEmailFunc(email)
 }
 
 func (m *mockUserRepository) Create(user *entity.User) (*entity.User, error) {
-	return m.Create(user)
+	return m.CreateFunc(user)
 }
 
 func (m *mockUserRepository) Update(ID int, user *entity.User) (*entity.User, error) {
-	return m.Update(ID, user)
+	return m.UpdateFunc(ID, user)
 }
 
 func (m *mockUserRepository) Delete(ID int) error {
-	return m.Delete(ID)
+	return m.DeleteFunc(ID)
 }
 
 // Implement mock functions for the other methods if needed

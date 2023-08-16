@@ -10,15 +10,25 @@ import (
 )
 
 type UserRepositoryMock struct {
-	GetByIDFunc func(ID int) (*entity.User, error)
-	GetAllFunc  func(limit int, offset int) ([]*entity.User, error)
-	CreateFunc  func(user *entity.User) (*entity.User, error)
-	UpdateFunc  func(ID int, user *entity.User) (*entity.User, error)
-	DeleteFunc  func(ID int) error
+	GetByIDFunc       func(ID int) (*entity.User, error)
+	GetByUsernameFunc func(username string) (*entity.User, error)
+	GetByEmailFunc    func(email string) (*entity.User, error)
+	GetAllFunc        func(limit int, offset int) ([]*entity.User, error)
+	CreateFunc        func(user *entity.User) (*entity.User, error)
+	UpdateFunc        func(ID int, user *entity.User) (*entity.User, error)
+	DeleteFunc        func(ID int) error
 }
 
 func (m *UserRepositoryMock) GetByID(ID int) (*entity.User, error) {
 	return m.GetByIDFunc(ID)
+}
+
+func (m *UserRepositoryMock) GetByUsername(username string) (*entity.User, error) {
+	return m.GetByUsernameFunc(username)
+}
+
+func (m *UserRepositoryMock) GetByEmail(email string) (*entity.User, error) {
+	return m.GetByEmailFunc(email)
 }
 
 func (m *UserRepositoryMock) GetAll(limit int, offset int) ([]*entity.User, error) {
