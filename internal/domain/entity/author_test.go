@@ -10,7 +10,7 @@ import (
 func TestAuthor(t *testing.T) {
 	now := time.Now()
 	author := Author{
-		ID:        1,
+		ID:        "1",
 		Name:      "John Doe",
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -19,7 +19,7 @@ func TestAuthor(t *testing.T) {
 	}
 
 	// Add your test assertions here
-	assert.Equal(t, 1, author.ID, "Expected ID to be 1")
+	assert.Equal(t, "1", author.ID, "Expected ID to be 1")
 	assert.Equal(t, "John Doe", author.Name, "Expected Name to be 'John Doe'")
 	assert.True(t, author.CreatedAt.Equal(now) || author.CreatedAt.Before(now), "Expected CreatedAt to be equal or before current time")
 	assert.True(t, author.UpdatedAt.Equal(now) || author.UpdatedAt.Before(now), "Expected UpdatedAt to be equal or before current time")
