@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Quote struct {
-	ID           int
+	ID           string
 	text         string
 	tags         string
 	Author       Author
