@@ -58,9 +58,11 @@ func main() {
 	app.Use(requestid.New())
 
 	userRepository := repository.NewUserRepository(db)
+	authorRepository := repository.NewAuthorRepository(db)
 
 	handler.NewAuthHandler(app.Group("/api/v1/auth"), userRepository)
 	handler.NewUserHandler(app.Group("/api/v1/user"), userRepository)
+	handler.NewAuthorHandler(app.Group("/api/v1/author"), authorRepository)
 
 	// Prepare an endpoint for 'Not Found'.
 	app.All("*", func(c *fiber.Ctx) error {
