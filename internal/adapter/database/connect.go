@@ -22,6 +22,6 @@ func Connection(config config.Configuration) (db *gorm.DB, err error) {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
-	db.AutoMigrate(&model.User{}, &model.Author{}, &model.Category{})
+	db.AutoMigrate(&model.User{}, &model.Author{}, &model.Category{}, &model.Quote{})
 	return db, err
 }

@@ -11,34 +11,33 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
 
-type CategoryHandler struct {
-	categoryRepository repository.ICategoryRepository
+type QuoteHandler struct {
+	quoteRepository repository.IQuoteRepository
 }
 
-func NewCategoryHandler(route fiber.Router, categoryRepository repository.ICategoryRepository) {
+func NewQuoteHandler(route fiber.Router, quoteRepository repository.IQuoteRepository) {
 
-	handler := &CategoryHandler{
-		categoryRepository: categoryRepository,
+	handler := &QuoteHandler{
+		quoteRepository: quoteRepository,
 	}
 
 	route.Use(middleware.Protected())
 	route.Get("/list", handler.GetAll)
-	route.Get("/:categoryID", handler.GetByID)
-	// route.Get("/:parentID", handler.GetByParentID)
+	route.Get("/:quoteID", handler.GetByID)
 	route.Post("/create", handler.Create)
-	route.Patch("/:categoryID", handler.Update)
-	route.Delete("/:categoryID", handler.Delete)
+	route.Patch("/:quoteID", handler.Update)
+	route.Delete("/:quoteID", handler.Delete)
 }
 
-func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
-	idStr := ctx.Params("categoryID")
+func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {
+	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	u, err := categoryUsecase.GetByID(id)
+	u, err := quoteUsecase.GetByID(id)
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
@@ -46,8 +45,8 @@ func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
 	})
 }
 
-func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
+func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
+	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
@@ -68,11 +67,11 @@ func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	u, err := categoryUsecase.GetAll(limit, offset)
+	u, err := quoteUsecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error fetching categorys",
+			"message": "Error fetching quotes",
 		})
 	}
 
@@ -83,12 +82,12 @@ func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
 
 }
 
-func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
+func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
+	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
-	var category entity.Category
+	var quote entity.Quote
 
-	if err := ctx.BodyParser(&category); err != nil {
+	if err := ctx.BodyParser(&quote); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -96,33 +95,33 @@ func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdUser, err := categoryUsecase.Create(&category)
+	createdQuote, err := quoteUsecase.Create(&quote)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create category",
+			"message": "Failed to create quote",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   createdUser,
+		"data":   createdQuote,
 	})
 }
 
-func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
+func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
+	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
-	idStr := ctx.Params("categoryID")
+	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	category := entity.Category{}
+	quote := entity.Quote{}
 
-	if err := ctx.BodyParser(&category); err != nil {
+	if err := ctx.BodyParser(&quote); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -130,45 +129,45 @@ func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := categoryUsecase.Update(id, &category)
+	updatedQuote, err := quoteUsecase.Update(id, &quote)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create category",
+			"message": "Failed to create quote",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   updatedUser,
+		"data":   updatedQuote,
 	})
 }
 
-func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
+func (h *QuoteHandler) Delete(ctx *fiber.Ctx) error {
+	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
-	idStr := ctx.Params("categoryID")
+	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid category ID format",
+			"message": "Invalid quote ID format",
 		})
 	}
 
-	err = categoryUsecase.Delete(id)
+	err = quoteUsecase.Delete(id)
 	if err != nil {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to delete category",
+			"message": "Failed to delete quote",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "success",
-		"message": "User deleted successfully",
+		"message": "Quote deleted successfully",
 	})
 }

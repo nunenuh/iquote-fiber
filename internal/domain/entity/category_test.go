@@ -11,10 +11,10 @@ func TestCategory(t *testing.T) {
 	now := time.Now()
 
 	category := Category{
-		ID:          1,
+		ID:          "1",
 		Name:        "Category 1",
 		Description: "Description of Category 1",
-		ParentID:    0,
+		ParentID:    "0",
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		DeletedAt:   now,

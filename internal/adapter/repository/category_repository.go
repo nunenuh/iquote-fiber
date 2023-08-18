@@ -22,18 +22,27 @@ func NewCategoryRepository(db *gorm.DB) *categoryRepository {
 func (r *categoryRepository) GetAll(limit int, offset int) ([]*entity.Category, error) {
 	db := r.DB
 	var categoryModel []model.Category
-	result := db.Offset(offset).Limit(limit).Find(&categoryModel)
+	result := db.Preload("Parent").Offset(offset).Limit(limit).Find(&categoryModel)
 	if result.Error != nil {
 		panic(result.Error)
 	}
 
 	out := make([]*entity.Category, 0)
 	for _, u := range categoryModel {
-		out = append(out, &entity.Category{
+		cat := &entity.Category{
 			ID:          strconv.Itoa(u.ID),
 			Name:        u.Name,
 			Description: u.Description,
-		})
+			ParentID:    "",
+			CreatedAt:   u.CreatedAt,
+			UpdatedAt:   u.UpdatedAt,
+		}
+		if u.ParentID != nil {
+			cat.ParentID = strconv.Itoa(*u.ParentID)
+		} else {
+			cat.ParentID = ""
+		}
+		out = append(out, cat)
 	}
 	return out, nil
 }
@@ -71,6 +80,7 @@ func (r *categoryRepository) GetByName(name string) ([]*entity.Category, error) 
 			ID:          strconv.Itoa(u.ID),
 			Name:        u.Name,
 			Description: u.Description,
+			ParentID:    strconv.Itoa(*u.ParentID),
 		})
 	}
 	return out, nil
@@ -93,6 +103,7 @@ func (r *categoryRepository) GetByParentID(ID int) ([]*entity.Category, error) {
 			ID:          strconv.Itoa(u.ID),
 			Name:        u.Name,
 			Description: u.Description,
+			ParentID:    strconv.Itoa(*u.ParentID),
 		})
 	}
 	return out, nil
@@ -100,26 +111,51 @@ func (r *categoryRepository) GetByParentID(ID int) ([]*entity.Category, error) {
 
 func (r *categoryRepository) Create(category *entity.Category) (*entity.Category, error) {
 	db := r.DB
-
 	categoryModel := &model.Category{
 		Name:        category.Name,
 		Description: category.Description,
+	}
+
+	if category.ParentID != "" {
+		var parentCategory model.Category
+		parentResult := db.Where("id = ?", category.ParentID).First(&parentCategory)
+		if parentResult.Error != nil {
+			panic(parentResult.Error)
+		} else {
+			categoryModel.ParentID = &parentCategory.ID
+		}
 	}
 
 	result := db.Create(&categoryModel)
 	if result.Error != nil {
 		panic(result.Error)
 	}
+
+	category.CreatedAt = categoryModel.CreatedAt
+	category.UpdatedAt = categoryModel.UpdatedAt
+
 	return category, nil
 }
 
 func (r *categoryRepository) Update(ID int, category *entity.Category) (*entity.Category, error) {
 	db := r.DB
+	var categoryModel model.Category
+	resultFind := db.Where("id = ?", ID).First(&categoryModel)
+	if resultFind.Error != nil {
+		panic(resultFind.Error)
+	} else {
+		categoryModel.Name = category.Name
+		categoryModel.Description = category.Description
+	}
 
-	categoryModel := &model.Category{
-		ID:          ID,
-		Name:        category.Name,
-		Description: category.Description,
+	if category.ParentID != "" {
+		var parentCategory model.Category
+		parentResult := db.Where("id = ?", category.ParentID).First(&parentCategory)
+		if parentResult.Error != nil {
+			panic(parentResult.Error)
+		} else {
+			categoryModel.ParentID = &parentCategory.ID
+		}
 	}
 
 	result := db.Save(&categoryModel)

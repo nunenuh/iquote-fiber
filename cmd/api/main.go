@@ -60,11 +60,13 @@ func main() {
 	userRepository := repository.NewUserRepository(db)
 	authorRepository := repository.NewAuthorRepository(db)
 	categoryRepository := repository.NewCategoryRepository(db)
+	quoteRepository := repository.NewQuoteRepository(db)
 
 	handler.NewAuthHandler(app.Group("/api/v1/auth"), userRepository)
 	handler.NewUserHandler(app.Group("/api/v1/user"), userRepository)
 	handler.NewAuthorHandler(app.Group("/api/v1/author"), authorRepository)
 	handler.NewCategoryHandler(app.Group("/api/v1/category"), categoryRepository)
+	handler.NewQuoteHandler(app.Group("/api/v1/quote"), quoteRepository)
 
 	// Prepare an endpoint for 'Not Found'.
 	app.All("*", func(c *fiber.Ctx) error {
