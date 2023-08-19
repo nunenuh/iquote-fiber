@@ -18,15 +18,20 @@ type AuthHandler struct {
 	userRepository repository.IUserRepository
 }
 
-func NewAuthHandler(authRoute fiber.Router, userRepository repository.IUserRepository) {
-	handler := &AuthHandler{
+func NewAuthHandler(userRepository repository.IUserRepository) *AuthHandler {
+	return &AuthHandler{
 		userRepository: userRepository,
 	}
-
-	authRoute.Post("/login", handler.signInUser)
-	authRoute.Get("/private", middleware.Protected(), handler.privateRoute)
 }
 
+func (h *AuthHandler) Register(route fiber.Router) {
+	route.Post("/login", h.signInUser)
+	route.Get("/private", middleware.Protected(), h.privateRoute)
+}
+
+func ProvideAuthHandler(repo repository.IUserRepository) *AuthHandler {
+	return NewAuthHandler(repo)
+}
 func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
 	type loginRequest struct {
 		Username string `json:"username"`

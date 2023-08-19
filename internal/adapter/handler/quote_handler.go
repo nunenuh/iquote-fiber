@@ -15,18 +15,23 @@ type QuoteHandler struct {
 	quoteRepository repository.IQuoteRepository
 }
 
-func NewQuoteHandler(route fiber.Router, quoteRepository repository.IQuoteRepository) {
-
-	handler := &QuoteHandler{
+func NewQuoteHandler(quoteRepository repository.IQuoteRepository) *QuoteHandler {
+	return &QuoteHandler{
 		quoteRepository: quoteRepository,
 	}
+}
 
+func (h *QuoteHandler) Register(route fiber.Router) {
 	route.Use(middleware.Protected())
-	route.Get("/list", handler.GetAll)
-	route.Get("/:quoteID", handler.GetByID)
-	route.Post("/create", handler.Create)
-	route.Patch("/:quoteID", handler.Update)
-	route.Delete("/:quoteID", handler.Delete)
+	route.Get("/list", h.GetAll)
+	route.Get("/:quoteID", h.GetByID)
+	route.Post("/create", h.Create)
+	route.Patch("/:quoteID", h.Update)
+	route.Delete("/:quoteID", h.Delete)
+}
+
+func ProvideQuoteHandler(repo repository.IQuoteRepository) *QuoteHandler {
+	return NewQuoteHandler(repo)
 }
 
 func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {

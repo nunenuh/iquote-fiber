@@ -6,8 +6,13 @@ import (
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
+	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 	"gorm.io/gorm"
 )
+
+func ProvideCategoryRepository(db *gorm.DB) repository.ICategoryRepository {
+	return NewCategoryRepository(db)
+}
 
 type categoryRepository struct {
 	DB *gorm.DB

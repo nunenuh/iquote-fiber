@@ -15,18 +15,23 @@ type AuthorHandler struct {
 	authorRepository repository.IAuthorRepository
 }
 
-func NewAuthorHandler(route fiber.Router, authorRepository repository.IAuthorRepository) {
-
-	handler := &AuthorHandler{
+func NewAuthorHandler(authorRepository repository.IAuthorRepository) *AuthorHandler {
+	return &AuthorHandler{
 		authorRepository: authorRepository,
 	}
+}
 
+func ProvideAuthorHandler(repo repository.IAuthorRepository) *AuthorHandler {
+	return NewAuthorHandler(repo)
+}
+
+func (h *AuthorHandler) Register(route fiber.Router) {
 	route.Use(middleware.Protected())
-	route.Get("/list", handler.GetAll)
-	route.Get("/:authorID", handler.GetByID)
-	route.Post("/create", handler.Create)
-	route.Patch("/:authorID", handler.Update)
-	route.Delete("/:authorID", handler.Delete)
+	route.Get("/list", h.GetAll)
+	route.Get("/:authorID", h.GetByID)
+	route.Post("/create", h.Create)
+	route.Patch("/:authorID", h.Update)
+	route.Delete("/:authorID", h.Delete)
 }
 
 func (h *AuthorHandler) GetByID(ctx *fiber.Ctx) error {

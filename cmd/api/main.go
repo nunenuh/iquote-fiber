@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -17,28 +18,19 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/handler"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/repository"
+	"go.uber.org/fx"
 )
 
-func main() {
-
-	conf, err := config.LoadConfig(".")
-	if err != nil {
-		log.Fatal("Configuration error: $s", err)
-
-	}
-	// 	// Try to connect to our database as the initial part.
-	db, err := database.Connection(conf)
-	if err != nil {
-		log.Fatal("Database connection error: $s", err)
-	}
-
-	// Creates a new Fiber instance.
+func createApp() *fiber.App {
 	app := fiber.New(fiber.Config{
 		AppName:      "IQuote-Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
+	setupMiddleware(app)
+	return app
+}
 
-	// Use global middlewares.
+func setupMiddleware(app *fiber.App) {
 	app.Use(cors.New())
 	app.Use(compress.New())
 	app.Use(etag.New())
@@ -56,29 +48,55 @@ func main() {
 	app.Use(logger.New())
 	app.Use(recover.New())
 	app.Use(requestid.New())
+}
 
-	userRepository := repository.NewUserRepository(db)
-	authorRepository := repository.NewAuthorRepository(db)
-	categoryRepository := repository.NewCategoryRepository(db)
-	quoteRepository := repository.NewQuoteRepository(db)
+func startApp(lc fx.Lifecycle, app *fiber.App) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				// Prepare an endpoint for 'Not Found'.
+				app.All("*", func(c *fiber.Ctx) error {
+					errorMessage := fmt.Sprintf("Route '%s' does not exist in this API!", c.OriginalURL())
+					return c.Status(fiber.StatusNotFound).JSON(&fiber.Map{
+						"status":  "fail",
+						"message": errorMessage,
+					})
+				})
 
-	handler.NewAuthHandler(app.Group("/api/v1/auth"), userRepository)
-	handler.NewUserHandler(app.Group("/api/v1/user"), userRepository)
-	handler.NewAuthorHandler(app.Group("/api/v1/author"), authorRepository)
-	handler.NewCategoryHandler(app.Group("/api/v1/category"), categoryRepository)
-	handler.NewQuoteHandler(app.Group("/api/v1/quote"), quoteRepository)
-
-	// Prepare an endpoint for 'Not Found'.
-	app.All("*", func(c *fiber.Ctx) error {
-		errorMessage := fmt.Sprintf("Route '%s' does not exist in this API!", c.OriginalURL())
-
-		return c.Status(fiber.StatusNotFound).JSON(&fiber.Map{
-			"status":  "fail",
-			"message": errorMessage,
-		})
+				// Listen to port 8080.
+				log.Fatal(app.Listen(":8080"))
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return app.Shutdown()
+		},
 	})
+}
 
-	// Listen to port 8080.
-	log.Fatal(app.Listen(":8080"))
+func main() {
+
+	fx.New(
+		fx.Provide(config.ProvideConfig(".")),
+		fx.Provide(database.ProvideDatabaseConnection()),
+		fx.Provide(
+			createApp,
+			repository.ProvideUserRepository,
+			repository.ProvideAuthorRepository,
+			repository.ProvideCategoryRepository,
+			repository.ProvideQuoteRepository,
+
+			handler.ProvideAuthHandler,
+			handler.ProvideUserHandler,
+			handler.ProvideAuthorHandler,
+			handler.ProvideCategoryHandler,
+			handler.ProvideQuoteHandler,
+		),
+		fx.Invoke(
+			handler.RegisterRoutes,
+			startApp,
+			// ... other invokable functions
+		),
+	).Run()
 
 }

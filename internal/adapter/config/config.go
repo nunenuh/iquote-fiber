@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+func ProvideConfig(path string) func() (Configuration, error) {
+	return func() (Configuration, error) {
+		return LoadConfig(path)
+	}
+}
+
 type Configuration struct {
 	AppName string `mapstructure:"APP_NAME"`
 	AppEnv  string `mapstructure:"APP_ENV"`
@@ -61,5 +67,5 @@ func LoadConfig(path string) (config Configuration, err error) {
 		config.DBName = os.Getenv("DB_NAME")
 	}
 
-	return
+	return config, nil
 }

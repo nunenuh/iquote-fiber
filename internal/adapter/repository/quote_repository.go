@@ -6,8 +6,13 @@ import (
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
+	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 	"gorm.io/gorm"
 )
+
+func ProvideQuoteRepository(db *gorm.DB) repository.IQuoteRepository {
+	return NewQuoteRepository(db)
+}
 
 type quoteRepository struct {
 	DB *gorm.DB

@@ -15,19 +15,24 @@ type CategoryHandler struct {
 	categoryRepository repository.ICategoryRepository
 }
 
-func NewCategoryHandler(route fiber.Router, categoryRepository repository.ICategoryRepository) {
-
-	handler := &CategoryHandler{
+func NewCategoryHandler(categoryRepository repository.ICategoryRepository) *CategoryHandler {
+	return &CategoryHandler{
 		categoryRepository: categoryRepository,
 	}
+}
 
+func (h *CategoryHandler) Register(route fiber.Router) {
 	route.Use(middleware.Protected())
-	route.Get("/list", handler.GetAll)
-	route.Get("/:categoryID", handler.GetByID)
+	route.Get("/list", h.GetAll)
+	route.Get("/:categoryID", h.GetByID)
 	// route.Get("/:parentID", handler.GetByParentID)
-	route.Post("/create", handler.Create)
-	route.Patch("/:categoryID", handler.Update)
-	route.Delete("/:categoryID", handler.Delete)
+	route.Post("/create", h.Create)
+	route.Patch("/:categoryID", h.Update)
+	route.Delete("/:categoryID", h.Delete)
+}
+
+func ProvideCategoryHandler(repo repository.ICategoryRepository) *CategoryHandler {
+	return NewCategoryHandler(repo)
 }
 
 func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {

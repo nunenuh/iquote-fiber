@@ -7,8 +7,15 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/adapter/common/hash"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
+	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 	"gorm.io/gorm"
 )
+
+var _ repository.IUserRepository = &userRepository{}
+
+func ProvideUserRepository(db *gorm.DB) repository.IUserRepository {
+	return NewUserRepository(db)
+}
 
 type userRepository struct {
 	DB *gorm.DB

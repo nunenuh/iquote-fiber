@@ -15,18 +15,23 @@ type UserHandler struct {
 	userRepository repository.IUserRepository
 }
 
-func NewUserHandler(route fiber.Router, userRepository repository.IUserRepository) {
-
-	handler := &UserHandler{
+func NewUserHandler(userRepository repository.IUserRepository) *UserHandler {
+	return &UserHandler{
 		userRepository: userRepository,
 	}
+}
 
+func (h *UserHandler) Register(route fiber.Router) {
 	route.Use(middleware.Protected())
-	route.Get("/list", handler.GetAll)
-	route.Get("/:userID", handler.GetByID)
-	route.Post("/create", handler.Create)
-	route.Patch("/:userID", handler.Update)
-	route.Delete("/:userID", handler.Delete)
+	route.Get("/list", h.GetAll)
+	route.Get("/:userID", h.GetByID)
+	route.Post("/create", h.Create)
+	route.Patch("/:userID", h.Update)
+	route.Delete("/:userID", h.Delete)
+}
+
+func ProvideUserHandler(repo repository.IUserRepository) *UserHandler {
+	return NewUserHandler(repo)
 }
 
 func (h *UserHandler) GetByID(ctx *fiber.Ctx) error {
