@@ -17,15 +17,17 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/adapter/config"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/handler"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/middleware"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/repository"
 	"go.uber.org/fx"
 )
 
-func createApp() *fiber.App {
+func createApp(config config.Configuration) *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName:      "IQuote-Fiber Clean Arch",
+		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
+	middleware.InitAuthMiddleware(config.JWTSecret)
 	setupMiddleware(app)
 	return app
 }
@@ -50,7 +52,7 @@ func setupMiddleware(app *fiber.App) {
 	app.Use(requestid.New())
 }
 
-func startApp(lc fx.Lifecycle, app *fiber.App) {
+func startApp(lc fx.Lifecycle, app *fiber.App, config config.Configuration) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
@@ -64,7 +66,8 @@ func startApp(lc fx.Lifecycle, app *fiber.App) {
 				})
 
 				// Listen to port 8080.
-				log.Fatal(app.Listen(":8080"))
+				urls := fmt.Sprintf("%s:%s", config.AppHost, config.AppPort)
+				log.Fatal(app.Listen(urls))
 			}()
 			return nil
 		},

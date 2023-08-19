@@ -16,12 +16,20 @@ func ProvideConfig(path string) func() (Configuration, error) {
 type Configuration struct {
 	AppName string `mapstructure:"APP_NAME"`
 	AppEnv  string `mapstructure:"APP_ENV"`
+	AppHost string `mapstructure:"APP_HOST"`
 	AppPort string `mapstructure:"APP_PORT"`
-	DBHost  string `mapstructure:"DB_HOST"`
-	DBPort  string `mapstructure:"DB_PORT"`
-	DBUser  string `mapstructure:"DB_USER"`
-	DBPass  string `mapstructure:"DB_PASS"`
-	DBName  string `mapstructure:"DB_NAME"`
+
+	DBHost         string `mapstructure:"DB_HOST"`
+	DBPort         string `mapstructure:"DB_PORT"`
+	DBUser         string `mapstructure:"DB_USER"`
+	DBPass         string `mapstructure:"DB_PASS"`
+	DBName         string `mapstructure:"DB_NAME"`
+	DBMaxOpenConns string `mapstructure:"DB_MAX_OPEN_CONNS"`
+	DBMaxIdleConns string `mapstructure:"DB_MAX_IDLE_CONNS"`
+	// DBConnMaxLifetime time.Duration `mapstructure:"DB_CONN_MAX_LIFETIME"`
+
+	JWTSecret string `mapstructure:"JWT_SECRET"`
+	JwtExpire string `mapstructure:"JWT_EXPIRE"`
 }
 
 func LoadConfig(path string) (config Configuration, err error) {
@@ -41,6 +49,12 @@ func LoadConfig(path string) (config Configuration, err error) {
 
 	err = viper.Unmarshal(&config)
 
+	setupConfig(&config)
+
+	return config, nil
+}
+
+func setupConfig(config *Configuration) {
 	// Use OS environment variables if the .env is missing some values
 	if config.AppName == "" {
 		config.AppName = os.Getenv("APP_NAME")
@@ -67,5 +81,19 @@ func LoadConfig(path string) (config Configuration, err error) {
 		config.DBName = os.Getenv("DB_NAME")
 	}
 
-	return config, nil
+	if config.DBMaxOpenConns == "" {
+		config.DBMaxOpenConns = os.Getenv("DB_MAX_OPEN_CONNS")
+	}
+
+	if config.DBMaxIdleConns == "" {
+		config.DBMaxIdleConns = os.Getenv("DB_MAX_IDLE_CONNS")
+	}
+
+	if config.JWTSecret == "" {
+		config.JWTSecret = os.Getenv("JWT_SECRET")
+	}
+
+	if config.JwtExpire == "" {
+		config.JwtExpire = os.Getenv("JWT_EXPIRE")
+	}
 }
