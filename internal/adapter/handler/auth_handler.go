@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -26,7 +27,9 @@ func NewAuthHandler(userRepository repository.IUserRepository) *AuthHandler {
 
 func (h *AuthHandler) Register(route fiber.Router) {
 	route.Post("/login", h.signInUser)
-	route.Get("/private", middleware.Protected(), h.privateRoute)
+	route.Get("/verify", middleware.Protected(), h.VerifyToken)
+	// route.Get("/refresh", middleware.Protected(), h.RefreshToken)
+
 }
 
 func ProvideAuthHandler(repo repository.IUserRepository) *AuthHandler {
@@ -91,7 +94,7 @@ func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
 	})
 }
 
-func (h *AuthHandler) privateRoute(ctx *fiber.Ctx) error {
+func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
 	localUser := ctx.Locals("user")
 
 	log.Printf("Type of localUser: %T\n", localUser)
@@ -101,8 +104,11 @@ func (h *AuthHandler) privateRoute(ctx *fiber.Ctx) error {
 	username := claims["username"].(string)
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status":   "success",
-		"message":  "Welcome to the private route!",
-		"username": username,
+		"status":  "success",
+		"message": fmt.Sprintf("Welcome to the application %s!", username),
 	})
 }
+
+// func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
+
+// }
