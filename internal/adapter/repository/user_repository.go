@@ -11,8 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var _ repository.IUserRepository = &userRepository{}
-
 func ProvideUserRepository(db *gorm.DB) repository.IUserRepository {
 	return NewUserRepository(db)
 }

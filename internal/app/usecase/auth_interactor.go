@@ -22,3 +22,21 @@ func (ucase *AuthUsecase) Login(username string, password string) (bool, error) 
 
 	return result, nil
 }
+
+func (ucase *AuthUsecase) RefreshToken(token string) (string, error) {
+	result, err := ucase.repo.RefreshToken(token)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
+
+func (ucase *AuthUsecase) VerifyToken(token string) (string, error) {
+	result, err := ucase.repo.VerifyToken(token)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
