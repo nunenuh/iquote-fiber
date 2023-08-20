@@ -27,7 +27,7 @@ func createApp(config config.Configuration) *fiber.App {
 		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
-	middleware.InitAuthMiddleware(config.JWTSecret)
+	middleware.InitAuthMiddleware(config.JWTSecret, config.JWTExpire)
 	setupMiddleware(app)
 	return app
 }

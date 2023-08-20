@@ -3,46 +3,42 @@ package handler
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/common/hash"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/dto"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/middleware"
 	"github.com/nunenuh/iquote-fiber/internal/app/usecase"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
 
-const secret = "asecret"
+// const secret = "asecret"
 
 type AuthHandler struct {
-	userRepository repository.IUserRepository
+	repo repository.IUserRepository
 }
 
 func NewAuthHandler(userRepository repository.IUserRepository) *AuthHandler {
 	return &AuthHandler{
-		userRepository: userRepository,
+		repo: userRepository,
 	}
 }
 
 func (h *AuthHandler) Register(route fiber.Router) {
 	route.Post("/login", h.signInUser)
 	route.Get("/verify", middleware.Protected(), h.VerifyToken)
-	// route.Get("/refresh", middleware.Protected(), h.RefreshToken)
+	route.Get("/refresh", middleware.Protected(), h.RefreshToken)
 
 }
 
 func ProvideAuthHandler(repo repository.IUserRepository) *AuthHandler {
 	return NewAuthHandler(repo)
 }
+
 func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
-	type loginRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
 
 	// Get request body.
-	request := &loginRequest{}
+	request := &dto.LoginRequest{}
 	if err := c.BodyParser(request); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"status":  "fail",
@@ -50,47 +46,26 @@ func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
 		})
 	}
 
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
-	u, err := userUsecase.GetByUsername(request.Username)
+	authUsecase := usecase.NewAuthUsecase(h.repo)
+	user, err := authUsecase.Login(request.Username, request.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-			"status":  "fail",
-			"message": "Forbidden!",
+			"status":  "fail use case",
+			"message": err,
 		})
 	}
 
-	hPass, err := hash.HashPassword(request.Password)
+	token, err := middleware.GenerateToken(user.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"status":  "fail",
-			"message": err.Error(),
-		})
-	}
-
-	if request.Username != u.Username || hash.CheckHashPassword(hPass, u.Password) {
-		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-			"status":  "fail",
-			"message": "Wrong username or password!",
-		})
-	}
-
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = u.Username
-	claims["user_id"] = u.ID
-	claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
-
-	signedToken, err := token.SignedString([]byte(secret))
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"status":  "fail",
-			"message": err.Error(),
+			"status":  "fail token",
+			"message": err,
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"token":  signedToken,
+		"token":  token,
 	})
 }
 
@@ -109,6 +84,23 @@ func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
 	})
 }
 
-// func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
+func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
+	localUser := ctx.Locals("user")
 
-// }
+	log.Printf("Type of localUser: %T\n", localUser)
+
+	token := ctx.Locals("user").(*jwt.Token)
+	tokenStr, err := middleware.RefreshToken(token)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+			"status":  "fail token",
+			"message": err,
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
+		"status": "success",
+		"token":  tokenStr,
+	})
+
+}

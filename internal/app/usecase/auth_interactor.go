@@ -1,42 +1,32 @@
 package usecase
 
 import (
+	"errors"
+
+	"github.com/nunenuh/iquote-fiber/internal/app/utils"
+	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
 
 type AuthUsecase struct {
-	repo repository.IAuthRepository
+	repo repository.IUserRepository
 }
 
-func NewAuthUsecase(r repository.IAuthRepository) *AuthUsecase {
+func NewAuthUsecase(repo repository.IUserRepository) *AuthUsecase {
 	return &AuthUsecase{
-		repo: r,
+		repo: repo,
 	}
 }
 
-func (ucase *AuthUsecase) Login(username string, password string) (bool, error) {
-	result, err := ucase.repo.Login(username, password)
+func (ucase *AuthUsecase) Login(username string, password string) (*entity.User, error) {
+	user, err := ucase.repo.GetByUsername(username)
 	if err != nil {
-		return false, err
+		return nil, errors.New("Forbidden!")
 	}
 
-	return result, nil
-}
-
-func (ucase *AuthUsecase) RefreshToken(token string) (string, error) {
-	result, err := ucase.repo.RefreshToken(token)
-	if err != nil {
-		return "", err
+	if !utils.CheckHashPassword(password, user.Password) {
+		return nil, errors.New("Invalid Credentials!")
 	}
 
-	return result, nil
-}
-
-func (ucase *AuthUsecase) VerifyToken(token string) (string, error) {
-	result, err := ucase.repo.VerifyToken(token)
-	if err != nil {
-		return "", err
-	}
-
-	return result, nil
+	return user, nil
 }

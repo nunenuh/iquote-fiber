@@ -29,7 +29,7 @@ type Configuration struct {
 	// DBConnMaxLifetime time.Duration `mapstructure:"DB_CONN_MAX_LIFETIME"`
 
 	JWTSecret string `mapstructure:"JWT_SECRET"`
-	JwtExpire string `mapstructure:"JWT_EXPIRE"`
+	JWTExpire string `mapstructure:"JWT_EXPIRE"`
 }
 
 func LoadConfig(path string) (config Configuration, err error) {
@@ -93,7 +93,7 @@ func setupConfig(config *Configuration) {
 		config.JWTSecret = os.Getenv("JWT_SECRET")
 	}
 
-	if config.JwtExpire == "" {
-		config.JwtExpire = os.Getenv("JWT_EXPIRE")
+	if config.JWTExpire == "" {
+		config.JWTExpire = os.Getenv("JWT_EXPIRE")
 	}
 }
