@@ -110,6 +110,7 @@ func (r *quoteRepository) Create(quote *entity.Quote) (*entity.Quote, error) {
 		QText:    quote.QText,
 		Tags:     quote.Tags,
 		AuthorID: &author.ID,
+		Author:   author,
 	}
 
 	ids := make([]int, len(quote.Category))
@@ -130,28 +131,114 @@ func (r *quoteRepository) Create(quote *entity.Quote) (*entity.Quote, error) {
 		return nil, err
 	}
 
-	// Update the entity fields from the model.
-	quote.ID = strconv.Itoa(quoteModel.ID)
-	quote.CreatedAt = quoteModel.CreatedAt
-	quote.UpdatedAt = quoteModel.UpdatedAt
+	createdQuote := &entity.Quote{
+		ID:        strconv.Itoa(quoteModel.ID),
+		QText:     quoteModel.QText,
+		Tags:      quoteModel.Tags,
+		CreatedAt: quoteModel.CreatedAt,
+		UpdatedAt: quoteModel.UpdatedAt,
+		Author:    entity.Author{ID: strconv.Itoa(*quoteModel.AuthorID), Name: quoteModel.Author.Name}, // Assuming Author model has a Name field
+		// Similarly map other fields
+	}
 
-	return quote, nil
+	// Handle category mapping
+	for _, cat := range quoteModel.Categories {
+		createdQuote.Category = append(createdQuote.Category, entity.Category{
+			ID:   strconv.Itoa(cat.ID),
+			Name: cat.Name, // assuming Category model has a Name field
+		})
+	}
+
+	// Handle UserWhoLiked mapping
+	for _, user := range quoteModel.UserWhoLiked {
+		updatedUser := entity.User{
+			ID:       strconv.Itoa(user.ID),
+			Username: user.Username,
+			FullName: user.FullName,
+			Email:    user.Email,
+		}
+		createdQuote.UserWhoLiked = append(createdQuote.UserWhoLiked, updatedUser)
+	}
+
+	return createdQuote, nil
 }
 
 // Helper function added to the entity.Quote to extract category IDs.
-
 func (r *quoteRepository) Update(ID int, quote *entity.Quote) (*entity.Quote, error) {
 	db := r.DB
-	quoteModel := &model.Quote{
-		QText: quote.QText,
-		Tags:  quote.Tags,
+
+	// Retrieve the existing quote
+	var existingQuote model.Quote
+	if err := db.First(&existingQuote, ID).Error; err != nil {
+		return nil, fmt.Errorf("Quote with ID %d not found", ID)
 	}
 
-	result := db.Save(&quoteModel)
-	if result.Error != nil {
-		return nil, result.Error
+	// Handle Author
+	var author model.Author
+	authorID, err := strconv.Atoi(quote.Author.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Author ID is not number!")
 	}
-	return quote, nil
+	if err := db.First(&author, authorID).Error; err != nil {
+		return nil, fmt.Errorf("Author with ID %s not found", quote.Author.ID)
+	}
+	existingQuote.AuthorID = &author.ID
+	existingQuote.Author = author
+
+	// Handle Categories
+	ids := make([]int, len(quote.Category))
+	for i, cat := range quote.Category {
+		id, err := strconv.Atoi(cat.ID)
+		if err != nil {
+			return nil, err
+		}
+		ids[i] = id
+	}
+	var categories []model.Category
+	if err := db.Where("id IN ?", ids).Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	existingQuote.Categories = categories
+
+	// Update Quote details
+	existingQuote.QText = quote.QText
+	existingQuote.Tags = quote.Tags
+
+	// Save the changes
+	if err := db.Save(&existingQuote).Error; err != nil {
+		return nil, err
+	}
+
+	updatedQuote := &entity.Quote{
+		ID:        strconv.Itoa(existingQuote.ID),
+		QText:     existingQuote.QText,
+		Tags:      existingQuote.Tags,
+		CreatedAt: existingQuote.CreatedAt,
+		UpdatedAt: existingQuote.UpdatedAt,
+		Author:    entity.Author{ID: strconv.Itoa(*existingQuote.AuthorID), Name: existingQuote.Author.Name}, // Assuming Author model has a Name field
+		// Similarly map other fields
+	}
+
+	// Handle category mapping
+	for _, cat := range existingQuote.Categories {
+		updatedQuote.Category = append(updatedQuote.Category, entity.Category{
+			ID:   strconv.Itoa(cat.ID),
+			Name: cat.Name, // assuming Category model has a Name field
+		})
+	}
+
+	// Handle UserWhoLiked mapping
+	for _, user := range existingQuote.UserWhoLiked {
+		updatedUser := entity.User{
+			ID:       strconv.Itoa(user.ID),
+			Username: user.Username,
+			FullName: user.FullName,
+			Email:    user.Email,
+		}
+		updatedQuote.UserWhoLiked = append(updatedQuote.UserWhoLiked, updatedUser)
+	}
+
+	return updatedQuote, nil
 }
 
 func (r *quoteRepository) Delete(ID int) error {
