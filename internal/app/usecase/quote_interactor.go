@@ -95,7 +95,7 @@ func (ucase *QuoteUseCase) Create(quote *entity.Quote) (*entity.Quote, error) {
 func (ucase *QuoteUseCase) Update(ID int, quote *entity.Quote) (*entity.Quote, error) {
 	u, err := ucase.repo.Update(ID, quote)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
