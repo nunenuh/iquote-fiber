@@ -74,25 +74,25 @@ func GenerateToken(userID string) (string, error) {
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func ParseToken(tokenStr string) (string, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtSecret), nil
-	})
+// func ParseToken(tokenStr string) (string, error) {
+// 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+// 		return []byte(jwtSecret), nil
+// 	})
 
-	if err != nil {
-		return "", err
-	}
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId, ok := claims["sub"].(string)
-		if !ok {
-			return "", errors.New("invalid token claims")
-		}
-		return userId, nil
-	}
+// 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+// 		userId, ok := claims["sub"].(string)
+// 		if !ok {
+// 			return "", errors.New("invalid token claims")
+// 		}
+// 		return userId, nil
+// 	}
 
-	return "", errors.New("invalid token")
-}
+// 	return "", errors.New("invalid token")
+// }
 
 func RefreshToken(token *jwt.Token) (string, error) {
 

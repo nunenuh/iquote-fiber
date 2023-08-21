@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/nunenuh/iquote-fiber/internal/adapter/common/hash"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
@@ -30,7 +29,7 @@ func (r *userRepository) GetAll(limit int, offset int) ([]*entity.User, error) {
 	var user []model.User
 	result := db.Offset(offset).Limit(limit).Find(&user)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, fmt.Errorf("User data is empty!")
 	}
 
 	out := make([]*entity.User, 0)
@@ -50,7 +49,7 @@ func (r *userRepository) GetByID(ID int) (*entity.User, error) {
 	var user model.User
 	result := db.First(&user, ID)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, fmt.Errorf("User with ID %d not found!", ID)
 	}
 
 	out := &entity.User{
@@ -115,14 +114,9 @@ func (r *userRepository) GetByEmail(email string) (*entity.User, error) {
 func (r *userRepository) Create(user *entity.User) (*entity.User, error) {
 	db := r.DB
 
-	hPass, err := hash.HashPassword(user.Password)
-	if err != nil {
-		panic(err)
-	}
-
 	userModel := &model.User{
 		Username: user.Username,
-		Password: hPass,
+		Password: user.Password,
 		FullName: user.FullName,
 		Email:    user.Email,
 		Phone:    user.Phone,
@@ -139,15 +133,10 @@ func (r *userRepository) Create(user *entity.User) (*entity.User, error) {
 func (r *userRepository) Update(ID int, user *entity.User) (*entity.User, error) {
 	db := r.DB
 
-	hPass, err := hash.HashPassword(user.Password)
-	if err != nil {
-		panic(err)
-	}
-
 	userModel := &model.User{
 		ID:       ID,
 		Username: user.Username,
-		Password: hPass,
+		Password: user.Password,
 		FullName: user.FullName,
 		Email:    user.Email,
 		Phone:    user.Phone,
