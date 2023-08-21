@@ -1,24 +1,30 @@
 package usecase
 
 import (
+	exception "github.com/nunenuh/iquote-fiber/internal/app/exeption"
+	"github.com/nunenuh/iquote-fiber/internal/app/utils"
+	"github.com/nunenuh/iquote-fiber/internal/app/validator"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
 
 type UserUsecase struct {
-	repo repository.IUserRepository
+	repo      repository.IUserRepository
+	validator *validator.Validator
 }
 
 func NewUserUsecase(r repository.IUserRepository) *UserUsecase {
+	validator := validator.NewValidator()
 	return &UserUsecase{
-		repo: r,
+		repo:      r,
+		validator: validator,
 	}
 }
 
 func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*entity.User, error) {
 	u, err := ucase.repo.GetAll(limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
@@ -27,7 +33,7 @@ func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*entity.User, error) 
 func (ucase *UserUsecase) GetByID(ID int) (*entity.User, error) {
 	u, err := ucase.repo.GetByID(ID)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
@@ -36,7 +42,7 @@ func (ucase *UserUsecase) GetByID(ID int) (*entity.User, error) {
 func (ucase *UserUsecase) GetByUsername(username string) (*entity.User, error) {
 	u, err := ucase.repo.GetByUsername(username)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
@@ -45,14 +51,24 @@ func (ucase *UserUsecase) GetByUsername(username string) (*entity.User, error) {
 func (ucase *UserUsecase) GetByEmail(email string) (*entity.User, error) {
 	u, err := ucase.repo.GetByEmail(email)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
 }
 
 func (ucase *UserUsecase) Create(user *entity.User) (*entity.User, error) {
+	err := ucase.validator.Validate(user)
+	if err != nil {
+		return nil, exception.NewValidatorError(err.Error())
+	}
+
 	u, err := ucase.repo.Create(user)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
+
+	u.Password, err = utils.HashPassword(u.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +76,17 @@ func (ucase *UserUsecase) Create(user *entity.User) (*entity.User, error) {
 }
 
 func (ucase *UserUsecase) Update(ID int, user *entity.User) (*entity.User, error) {
+	err := ucase.validator.Validate(user)
+	if err != nil {
+		return nil, exception.NewValidatorError(err.Error())
+	}
+
 	u, err := ucase.repo.Update(ID, user)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
+
+	u.Password, err = utils.HashPassword(u.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +95,14 @@ func (ucase *UserUsecase) Update(ID int, user *entity.User) (*entity.User, error
 }
 
 func (ucase *UserUsecase) Delete(ID int) error {
+	_, errGet := ucase.repo.GetByID(ID)
+	if errGet != nil {
+		return exception.NewRepositoryError(errGet.Error())
+	}
+
 	err := ucase.repo.Delete(ID)
 	if err != nil {
-		return err
+		return exception.NewRepositoryError(err.Error())
 	}
 
 	return nil
