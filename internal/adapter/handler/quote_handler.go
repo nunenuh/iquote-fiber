@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/dto"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/middleware"
 	"github.com/nunenuh/iquote-fiber/internal/app/usecase"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
@@ -13,11 +14,14 @@ import (
 
 type QuoteHandler struct {
 	quoteRepository repository.IQuoteRepository
+	usecase         *usecase.QuoteUseCase
 }
 
 func NewQuoteHandler(quoteRepository repository.IQuoteRepository) *QuoteHandler {
+	usecase := usecase.NewQuoteUsecase(quoteRepository)
 	return &QuoteHandler{
 		quoteRepository: quoteRepository,
+		usecase:         usecase,
 	}
 }
 
@@ -35,14 +39,13 @@ func ProvideQuoteHandler(repo repository.IQuoteRepository) *QuoteHandler {
 }
 
 func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {
-	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	u, err := quoteUsecase.GetByID(id)
+	u, err := h.usecase.GetByID(id)
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
@@ -51,7 +54,7 @@ func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
-	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
@@ -72,7 +75,7 @@ func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	u, err := quoteUsecase.GetAll(limit, offset)
+	u, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -88,11 +91,10 @@ func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
 }
 
 func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
-	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
-	var quote entity.Quote
+	var quoteReq dto.CreateQuoteRequest
 
-	if err := ctx.BodyParser(&quote); err != nil {
+	if err := ctx.BodyParser(&quoteReq); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -100,7 +102,9 @@ func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdQuote, err := quoteUsecase.Create(&quote)
+	// Convert the request to your domain entity
+
+	createdQuote, err := h.usecase.Create(quoteReq.ToEntity())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -116,7 +120,6 @@ func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 }
 
 func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
-	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
 	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
@@ -134,7 +137,7 @@ func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedQuote, err := quoteUsecase.Update(id, &quote)
+	updatedQuote, err := h.usecase.Update(id, &quote)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -150,7 +153,6 @@ func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
 }
 
 func (h *QuoteHandler) Delete(ctx *fiber.Ctx) error {
-	quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
 
 	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
@@ -161,7 +163,7 @@ func (h *QuoteHandler) Delete(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = quoteUsecase.Delete(id)
+	err = h.usecase.Delete(id)
 	if err != nil {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
