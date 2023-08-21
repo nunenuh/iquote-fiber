@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	exception "github.com/nunenuh/iquote-fiber/internal/app/exeption"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
@@ -18,7 +19,7 @@ func NewQuoteUsecase(r repository.IQuoteRepository) *QuoteUseCase {
 func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*entity.Quote, error) {
 	u, err := ucase.repo.GetAll(limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
@@ -77,22 +78,22 @@ func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*entity.Quote, error
 func (ucase *QuoteUseCase) GetByID(ID int) (*entity.Quote, error) {
 	u, err := ucase.repo.GetByID(ID)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) Create(author *entity.Quote) (*entity.Quote, error) {
-	u, err := ucase.repo.Create(author)
+func (ucase *QuoteUseCase) Create(quote *entity.Quote) (*entity.Quote, error) {
+	u, err := ucase.repo.Create(quote)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewRepositoryError(err.Error())
 	}
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) Update(ID int, author *entity.Quote) (*entity.Quote, error) {
-	u, err := ucase.repo.Update(ID, author)
+func (ucase *QuoteUseCase) Update(ID int, quote *entity.Quote) (*entity.Quote, error) {
+	u, err := ucase.repo.Update(ID, quote)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (ucase *QuoteUseCase) Update(ID int, author *entity.Quote) (*entity.Quote, 
 func (ucase *QuoteUseCase) Delete(ID int) error {
 	err := ucase.repo.Delete(ID)
 	if err != nil {
-		return err
+		return exception.NewRepositoryError(err.Error())
 	}
 
 	return nil
