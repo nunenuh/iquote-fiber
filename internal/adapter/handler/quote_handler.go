@@ -8,7 +8,6 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/adapter/dto"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/middleware"
 	"github.com/nunenuh/iquote-fiber/internal/app/usecase"
-	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 )
 
@@ -102,8 +101,6 @@ func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Convert the request to your domain entity
-
 	createdQuote, err := h.usecase.Create(quoteReq.ToEntity())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -120,16 +117,19 @@ func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 }
 
 func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
-
-	idStr := ctx.Params("quoteID")
-	id, err := strconv.Atoi(idStr)
+	// Get the ID from the URL parameter
+	idParam := ctx.Params("quoteID")
+	quoteID, err := strconv.Atoi(idParam)
 	if err != nil {
-		panic(err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid quote ID format",
+		})
 	}
 
-	quote := entity.Quote{}
-
-	if err := ctx.BodyParser(&quote); err != nil {
+	// Parse the request body
+	var quoteReq dto.CreateQuoteRequest
+	if err := ctx.BodyParser(&quoteReq); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -137,16 +137,20 @@ func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedQuote, err := h.usecase.Update(id, &quote)
+	// Convert the request to your domain entity
+	quoteEntity := quoteReq.ToEntity()
+
+	// Use the usecase to update the quote
+	updatedQuote, err := h.usecase.Update(quoteID, quoteEntity)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create quote",
+			"message": "Failed to update quote",
 			"error":   err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status": "success",
 		"data":   updatedQuote,
 	})
