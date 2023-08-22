@@ -14,7 +14,7 @@ func TestCategory(t *testing.T) {
 		ID:          1,
 		Name:        "Category 1",
 		Description: "Description of Category 1",
-		ParentID:    "0",
+		ParentID:    0,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		DeletedAt:   now,
