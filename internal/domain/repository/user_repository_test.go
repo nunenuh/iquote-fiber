@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
@@ -52,11 +51,11 @@ func TestIUserRepository_GetByID(t *testing.T) {
 	mock := &mockUserRepository{}
 
 	// Set the mock behavior for the GetByID method
-	expectedUser := &entity.User{ID: "1", FullName: "John Doe"}
+	expectedUser := &entity.User{ID: 1, FullName: "John Doe"}
 	mock.GetByIDFunc = func(ID int) (*entity.User, error) {
-		x, err := strconv.Atoi(expectedUser.ID)
-		if ID == x && err == nil {
-			return expectedUser, nil
+		x := expectedUser.ID
+		if x != ID {
+			return nil, fmt.Errorf("user not found")
 		}
 		return nil, fmt.Errorf("user not found")
 	}
