@@ -101,7 +101,16 @@ func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdQuote, err := h.usecase.Create(quoteReq.ToEntity())
+	quoteEntity, err := quoteReq.ToEntity()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to create quote",
+			"error":   err.Error(),
+		})
+	}
+
+	createdQuote, err := h.usecase.Create(quoteEntity)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -137,8 +146,14 @@ func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Convert the request to your domain entity
-	quoteEntity := quoteReq.ToEntity()
+	quoteEntity, err := quoteReq.ToEntity()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to create quote",
+			"error":   err.Error(),
+		})
+	}
 
 	// Use the usecase to update the quote
 	updatedQuote, err := h.usecase.Update(quoteID, quoteEntity)
