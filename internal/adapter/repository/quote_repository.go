@@ -20,10 +20,9 @@ type quoteRepository struct {
 }
 
 func NewQuoteRepository(db *gorm.DB) *quoteRepository {
-	quoteMapper := mapper.NewQuoteMapper()
 	return &quoteRepository{
 		DB:     db,
-		Mapper: quoteMapper,
+		Mapper: *mapper.NewQuoteMapper(),
 	}
 }
 
