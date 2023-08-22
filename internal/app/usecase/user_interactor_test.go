@@ -49,7 +49,7 @@ func (m *UserRepositoryMock) Delete(ID int) error {
 
 func TestUserUsecase_GetByID(t *testing.T) {
 	t.Run("User found", func(t *testing.T) {
-		expectedUser := &entity.User{ID: "1", FullName: "John Doe"}
+		expectedUser := &entity.User{ID: 1, FullName: "John Doe"}
 		repo := &UserRepositoryMock{
 			GetByIDFunc: func(ID int) (*entity.User, error) {
 				return expectedUser, nil
