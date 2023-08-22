@@ -35,7 +35,7 @@ func (r *categoryRepository) GetAll(limit int, offset int) ([]*entity.Category, 
 	out := make([]*entity.Category, 0)
 	for _, u := range categoryModel {
 		cat := &entity.Category{
-			ID:          strconv.Itoa(u.ID),
+			ID:          u.ID,
 			Name:        u.Name,
 			Description: u.Description,
 			ParentID:    "",
@@ -61,7 +61,7 @@ func (r *categoryRepository) GetByID(ID int) (*entity.Category, error) {
 	}
 
 	out := &entity.Category{
-		ID:          strconv.Itoa(categoryModel.ID),
+		ID:          categoryModel.ID,
 		Name:        categoryModel.Name,
 		Description: categoryModel.Description,
 	}
@@ -82,7 +82,7 @@ func (r *categoryRepository) GetByName(name string) ([]*entity.Category, error) 
 	out := make([]*entity.Category, 0)
 	for _, u := range categoryModel {
 		out = append(out, &entity.Category{
-			ID:          strconv.Itoa(u.ID),
+			ID:          u.ID,
 			Name:        u.Name,
 			Description: u.Description,
 			ParentID:    strconv.Itoa(*u.ParentID),
@@ -105,7 +105,7 @@ func (r *categoryRepository) GetByParentID(ID int) ([]*entity.Category, error) {
 	out := make([]*entity.Category, 0)
 	for _, u := range categoryModel {
 		out = append(out, &entity.Category{
-			ID:          strconv.Itoa(u.ID),
+			ID:          u.ID,
 			Name:        u.Name,
 			Description: u.Description,
 			ParentID:    strconv.Itoa(*u.ParentID),

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
@@ -35,7 +34,7 @@ func (r *authorRepository) GetAll(limit int, offset int) ([]*entity.Author, erro
 	out := make([]*entity.Author, 0)
 	for _, u := range authorModel {
 		out = append(out, &entity.Author{
-			ID:          strconv.Itoa(u.ID),
+			ID:          u.ID,
 			Name:        u.Name,
 			Description: u.Description,
 		})
@@ -52,7 +51,7 @@ func (r *authorRepository) GetByID(ID int) (*entity.Author, error) {
 	}
 
 	out := &entity.Author{
-		ID:          strconv.Itoa(authorModel.ID),
+		ID:          authorModel.ID,
 		Name:        authorModel.Name,
 		Description: authorModel.Description,
 	}
@@ -71,7 +70,7 @@ func (r *authorRepository) GetByName(name string) (*entity.Author, error) {
 	}
 
 	out := &entity.Author{
-		ID:          strconv.Itoa(authorModel.ID),
+		ID:          authorModel.ID,
 		Name:        authorModel.Name,
 		Description: authorModel.Description,
 	}
