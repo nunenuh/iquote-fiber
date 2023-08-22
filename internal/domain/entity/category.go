@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Category struct {
-	ID          string     `json:"id,omitempty"`
+	ID          int        `json:"id,omitempty"`
 	Name        string     `json:"name" validate:"required,min=2,max=100"`
 	Description string     `json:"description,omitempty" validate:"required,min=100,max=500"`
 	ParentID    string     `json:"parent_id,omitempty"`

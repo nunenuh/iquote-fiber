@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Quote struct {
-	ID           string `json:"id,omitempty"`
+	ID           int    `json:"id,omitempty"`
 	QText        string `json:"qtext"`
 	Tags         string `json:"tags,omitempty"`
 	Author       Author
