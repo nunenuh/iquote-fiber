@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/mapper"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 	"gorm.io/gorm"
@@ -14,12 +15,14 @@ func ProvideAuthorRepository(db *gorm.DB) repository.IAuthorRepository {
 }
 
 type authorRepository struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	Mapper *mapper.AuthorMapper
 }
 
 func NewAuthorRepository(db *gorm.DB) *authorRepository {
 	return &authorRepository{
-		DB: db,
+		DB:     db,
+		Mapper: mapper.NewAuthorMapper(),
 	}
 }
 
@@ -31,30 +34,27 @@ func (r *authorRepository) GetAll(limit int, offset int) ([]*entity.Author, erro
 		panic(result.Error)
 	}
 
-	out := make([]*entity.Author, 0)
-	for _, u := range authorModel {
-		out = append(out, &entity.Author{
-			ID:          u.ID,
-			Name:        u.Name,
-			Description: u.Description,
-		})
-	}
+	out := r.Mapper.ToEntityList(authorModel)
 	return out, nil
 }
 
-func (r *authorRepository) GetByID(ID int) (*entity.Author, error) {
+func (r *authorRepository) FindByID(ID int) (*model.Author, error) {
 	db := r.DB
 	var authorModel model.Author
 	result := db.First(&authorModel, ID)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
 
-	out := &entity.Author{
-		ID:          authorModel.ID,
-		Name:        authorModel.Name,
-		Description: authorModel.Description,
+	return &authorModel, nil
+}
+
+func (r *authorRepository) GetByID(ID int) (*entity.Author, error) {
+	authorModel, err := r.FindByID(ID)
+	if err != nil {
+		return nil, err
 	}
+	out := r.Mapper.ToEntity(authorModel)
 	return out, nil
 }
 
@@ -69,57 +69,45 @@ func (r *authorRepository) GetByName(name string) (*entity.Author, error) {
 		return nil, result.Error
 	}
 
-	out := &entity.Author{
-		ID:          authorModel.ID,
-		Name:        authorModel.Name,
-		Description: authorModel.Description,
-	}
+	out := r.Mapper.ToEntity(&authorModel)
 	return out, nil
 }
 
 func (r *authorRepository) Create(author *entity.Author) (*entity.Author, error) {
 	db := r.DB
-
-	authorModel := &model.Author{
-		Name:        author.Name,
-		Description: author.Description,
-		IsActive:    true,
-	}
-
+	authorModel := r.Mapper.ToModel(author)
 	result := db.Create(&authorModel)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
+	author = r.Mapper.ToEntity(authorModel)
 	return author, nil
 }
 
 func (r *authorRepository) Update(ID int, author *entity.Author) (*entity.Author, error) {
 	db := r.DB
 
-	authorModel := &model.Author{
-		ID:          ID,
-		Name:        author.Name,
-		Description: author.Description,
-		IsActive:    true,
+	authorModel, err := r.FindByID(ID)
+	if err != nil {
+		return nil, err
 	}
+
+	author.ID = ID
+	authorModel = r.Mapper.ToModel(author)
 
 	result := db.Save(&authorModel)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
+	author = r.Mapper.ToEntity(authorModel)
 	return author, nil
 }
 
 func (r *authorRepository) Delete(ID int) error {
 	db := r.DB
 
-	var authorModel model.Author
-
-	// Check if the author with the given ID exists
-	if err := db.First(&authorModel, ID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("author with ID %d not found", ID)
-		}
+	authorModel, err := r.FindByID(ID)
+	if err != nil {
 		return err
 	}
 
