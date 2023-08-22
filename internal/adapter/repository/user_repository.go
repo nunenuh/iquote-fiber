@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
+	"github.com/nunenuh/iquote-fiber/internal/adapter/mapper"
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
 	"github.com/nunenuh/iquote-fiber/internal/domain/repository"
 	"gorm.io/gorm"
@@ -14,36 +15,30 @@ func ProvideUserRepository(db *gorm.DB) repository.IUserRepository {
 }
 
 type userRepository struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	Mapper *mapper.UserMapper
 }
 
 func NewUserRepository(db *gorm.DB) *userRepository {
 	return &userRepository{
-		DB: db,
+		DB:     db,
+		Mapper: mapper.NewUserMapper(),
 	}
 }
 
 func (r *userRepository) GetAll(limit int, offset int) ([]*entity.User, error) {
 	db := r.DB
-	var user []model.User
-	result := db.Offset(offset).Limit(limit).Find(&user)
+	var users []model.User
+	result := db.Offset(offset).Limit(limit).Find(&users)
 	if result.Error != nil {
 		return nil, fmt.Errorf("User data is empty!")
 	}
 
-	out := make([]*entity.User, 0)
-	for _, u := range user {
-		out = append(out, &entity.User{
-			ID:       u.ID,
-			FullName: u.FullName,
-			Email:    u.Email,
-			Password: u.Password,
-		})
-	}
+	out := r.Mapper.ToEntityList(users)
 	return out, nil
 }
 
-func (r *userRepository) GetByID(ID int) (*entity.User, error) {
+func (r *userRepository) FindByID(ID int) (*model.User, error) {
 	db := r.DB
 	var user model.User
 	result := db.First(&user, ID)
@@ -51,12 +46,16 @@ func (r *userRepository) GetByID(ID int) (*entity.User, error) {
 		return nil, fmt.Errorf("User with ID %d not found!", ID)
 	}
 
-	out := &entity.User{
-		ID:       user.ID,
-		FullName: user.FullName,
-		Email:    user.Email,
-		Password: user.Password,
+	return &user, nil
+}
+
+func (r *userRepository) GetByID(ID int) (*entity.User, error) {
+	user, err := r.FindByID(ID)
+	if err != nil {
+		return nil, err
 	}
+
+	out := r.Mapper.ToEntity(user)
 	return out, nil
 }
 
@@ -71,17 +70,7 @@ func (r *userRepository) GetByUsername(username string) (*entity.User, error) {
 		return nil, result.Error
 	}
 
-	out := &entity.User{
-		ID:          user.ID,
-		FullName:    user.FullName,
-		Email:       user.Email,
-		Password:    user.Password,
-		IsActive:    user.IsActive,
-		Username:    user.Username,
-		Phone:       user.Phone,
-		Level:       user.Level,
-		IsSuperuser: user.IsSuperuser,
-	}
+	out := r.Mapper.ToEntity(&user)
 	return out, nil
 }
 
@@ -96,69 +85,48 @@ func (r *userRepository) GetByEmail(email string) (*entity.User, error) {
 		return nil, result.Error
 	}
 
-	out := &entity.User{
-		ID:          user.ID,
-		FullName:    user.FullName,
-		Email:       user.Email,
-		Password:    user.Password,
-		IsActive:    user.IsActive,
-		Username:    user.Username,
-		Phone:       user.Phone,
-		Level:       user.Level,
-		IsSuperuser: user.IsSuperuser,
-	}
+	out := r.Mapper.ToEntity(&user)
 	return out, nil
 }
 
 func (r *userRepository) Create(user *entity.User) (*entity.User, error) {
 	db := r.DB
 
-	userModel := &model.User{
-		Username: user.Username,
-		Password: user.Password,
-		FullName: user.FullName,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		IsActive: true,
-	}
+	userModel := r.Mapper.ToModel(user)
 
 	result := db.Create(&userModel)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
-	return user, nil
+	out := r.Mapper.ToEntity(userModel)
+	return out, nil
 }
 
 func (r *userRepository) Update(ID int, user *entity.User) (*entity.User, error) {
 	db := r.DB
 
-	userModel := &model.User{
-		ID:       ID,
-		Username: user.Username,
-		Password: user.Password,
-		FullName: user.FullName,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		IsActive: user.IsActive,
+	userModel, err := r.FindByID(ID)
+	if err != nil {
+		return nil, err
 	}
+
+	user.ID = ID
+	userModel = r.Mapper.ToModel(user)
 
 	result := db.Save(&userModel)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
-	return user, nil
+
+	out := r.Mapper.ToEntity(userModel)
+	return out, nil
 }
 
 func (r *userRepository) Delete(ID int) error {
 	db := r.DB
 
-	var user model.User
-
-	// Check if the user with the given ID exists
-	if err := db.First(&user, ID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("User with ID %d not found", ID)
-		}
+	user, err := r.FindByID(ID)
+	if err != nil {
 		return err
 	}
 
