@@ -30,16 +30,8 @@ func (qm *CategoryMapper) ToEntity(model *model.Category) *entity.Category {
 			UpdatedAt:   model.UpdatedAt,
 		}
 	}
-
-	// if model.ParentID != nil {
-	// 	cat.ParentID = *model.ParentID
-	// }
 	return cat
 }
-
-// func (qm *CategoryMapper) ToModel(entity *entity.Category) *model.Category {
-
-// }
 
 func (qm *CategoryMapper) ToEntityList(models []model.Category) []*entity.Category {
 	out := make([]*entity.Category, 0, len(models))
