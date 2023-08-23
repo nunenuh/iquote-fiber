@@ -27,6 +27,23 @@ func (qm *UserMapper) ToEntity(model *model.User) *entity.User {
 	return author
 }
 
+func (qm *UserMapper) ToEntityWithPassword(model *model.User) *entity.User {
+	author := &entity.User{
+		ID:          model.ID,
+		FullName:    model.FullName,
+		Email:       model.Email,
+		Password:    model.Password,
+		IsActive:    model.IsActive,
+		Username:    model.Username,
+		Phone:       model.Phone,
+		Level:       model.Level,
+		IsSuperuser: model.IsSuperuser,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+	}
+	return author
+}
+
 func (qm *UserMapper) ToEntityList(models []model.User) []*entity.User {
 	out := make([]*entity.User, 0, len(models))
 

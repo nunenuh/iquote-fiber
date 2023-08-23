@@ -40,10 +40,103 @@ func (r *quoteRepository) GetAll(limit int, offset int) ([]*entity.Quote, error)
 	return out, nil
 }
 
+func (r *quoteRepository) Like(quoteID int, userID int) (*entity.Quote, error) {
+	db := r.DB
+
+	// Find user and quote
+	var user model.User
+	var quote model.Quote
+
+	if err := db.First(&user, userID).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	if err := db.First(&quote, quoteID).Error; err != nil {
+		return nil, fmt.Errorf("quote not found: %w", err)
+	}
+
+	// Associate user with the quote in the join table
+	if err := db.Model(&quote).Association("UserWhoLiked").Append(&user); err != nil {
+		return nil, fmt.Errorf("failed to like quote: %w", err)
+	}
+
+	quoteModel, err := r.FindByID(quoteID)
+	if err != nil {
+		return nil, err
+	}
+	out := r.Mapper.ToEntity(quoteModel)
+	return out, nil
+}
+
+func (r *quoteRepository) GetByAuthorName(name string, limit int, offset int) ([]*entity.Quote, error) {
+	db := r.DB
+	var quoteModel []model.Quote
+	result := db.Preload("Author").Preload("Categories").Preload("UserWhoLiked").
+		Joins("Author").Offset(offset).Limit(limit).
+		Where("\"Author\".\"name\" ilike ?", "%"+name+"%").
+		Find(&quoteModel)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to get quote: %w", result.Error)
+	}
+
+	out := r.Mapper.ToEntityList(quoteModel)
+	return out, nil
+}
+
+func (r *quoteRepository) GetByAuthorID(ID int, limit int, offset int) ([]*entity.Quote, error) {
+	db := r.DB
+	var quoteModel []model.Quote
+	result := db.Preload("Author").Preload("Categories").Preload("UserWhoLiked").
+		Joins("Author").Offset(offset).Limit(limit).
+		Where("\"Author\".\"id\" = ?", ID).
+		Find(&quoteModel)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to get quote: %w", result.Error)
+	}
+
+	out := r.Mapper.ToEntityList(quoteModel)
+	return out, nil
+}
+
+func (r *quoteRepository) GetByCategoryName(name string, limit int, offset int) ([]*entity.Quote, error) {
+	db := r.DB
+	var quoteModel []model.Quote
+	result := db.Preload("Author").Preload("Categories").Preload("UserWhoLiked").
+		Joins("JOIN quote_categories ON quotes.id = quote_categories.quote_id").
+		Joins("JOIN categories ON quote_categories.category_id = categories.id").
+		Offset(offset).Limit(limit).
+		Where("categories.name ilike ?", "%"+name+"%").
+		Find(&quoteModel)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to get quote: %w", result.Error)
+	}
+
+	out := r.Mapper.ToEntityList(quoteModel)
+	return out, nil
+}
+
+func (r *quoteRepository) GetByCategoryID(ID int, limit int, offset int) ([]*entity.Quote, error) {
+	db := r.DB
+	var quoteModel []model.Quote
+	result := db.Preload("Author").Preload("Categories").Preload("UserWhoLiked").
+		Joins("JOIN quote_categories ON quotes.id = quote_categories.quote_id").
+		Joins("JOIN categories ON quote_categories.category_id = categories.id").
+		Offset(offset).Limit(limit).
+		Where("categories.id = ?", ID).
+		Find(&quoteModel)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to get quote: %w", result.Error)
+	}
+
+	out := r.Mapper.ToEntityList(quoteModel)
+	return out, nil
+}
+
 func (r *quoteRepository) FindByID(ID int) (*model.Quote, error) {
 	db := r.DB
 	var quoteModel model.Quote
-	result := db.First(&quoteModel, ID)
+	result := db.Preload("Author").Preload("Categories").Preload("UserWhoLiked").
+		First(&quoteModel, ID)
 	if result.Error != nil {
 		return nil, result.Error
 	}

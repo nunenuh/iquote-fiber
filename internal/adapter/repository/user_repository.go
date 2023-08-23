@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/adapter/mapper"
@@ -69,8 +70,9 @@ func (r *userRepository) GetByUsername(username string) (*entity.User, error) {
 		}
 		return nil, result.Error
 	}
+	log.Printf("Password from repo: %s", user.Password)
 
-	out := r.Mapper.ToEntity(&user)
+	out := r.Mapper.ToEntityWithPassword(&user)
 	return out, nil
 }
 

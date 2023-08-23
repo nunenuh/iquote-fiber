@@ -68,7 +68,7 @@ func jwtError(c *fiber.Ctx, err error) error {
 func GenerateToken(userID int) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = userID
+	claims["user_id"] = userID
 	claims["exp"] = jwtExpire
 
 	return token.SignedString([]byte(jwtSecret))
