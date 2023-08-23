@@ -52,5 +52,6 @@ clean:
 
 # Ensure dependencies are kept in sync
 deps:
+	@go mod download
 	@go mod tidy
 	@go mod verify

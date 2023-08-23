@@ -1,4 +1,4 @@
-name: SonarCloud
+name: CodeCoverage
 
 on:
   push:
@@ -7,8 +7,7 @@ on:
     branches: [ "main", "stag", "dev" ]
 
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  build:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -19,11 +18,9 @@ jobs:
           POSTGRES_DB: iquote_fastapi
         ports:
           - 5432:5432
-
+        #   options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -33,12 +30,12 @@ jobs:
       - name: Install dependencies
         run: make deps
 
-    #   - name: Test with Go Test
-    #     run: go test -v ./... -coverprofile=coverage.out
+      - name: Test with Go Test and Coverage
+        run: make test-coverage
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_ACTION_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: nunenuh-github
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}  # not required for public repos
+          files: coverage.out
+          fail_ci_if_error: true  # optional (default = false)
