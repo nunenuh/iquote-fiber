@@ -11,7 +11,7 @@ type IQuoteRepository interface {
 	// GetByTags(tags string) ([]*entity.Quote, error)
 	// Search(keyword string) ([]*entity.Quote, error)
 	Like(quoteID int, userID int) (*entity.Quote, error)
-	// Unlike(quoteID int, userID int) (*entity.Author, error)
+	Unlike(quoteID int, userID int) (*entity.Quote, error)
 	GetByID(ID int) (*entity.Quote, error)
 	Create(quote *entity.Quote) (*entity.Quote, error)
 	Update(ID int, quote *entity.Quote) (*entity.Quote, error)

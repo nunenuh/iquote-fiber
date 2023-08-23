@@ -87,14 +87,14 @@ func (ucase *QuoteUseCase) Like(quoteID int, userID int) (*entity.Quote, error) 
 	return u, nil
 }
 
-// func (ucase *QuoteUseCase) Unlike(quoteID int, userID int) (*entity.Author, error) {
-// 	u, err := ucase.repo.Unlike(quoteID, userID)
-// 	if err != nil {
-// 		return nil, exception.NewRepositoryError(err.Error())
-// 	}
+func (ucase *QuoteUseCase) Unlike(quoteID int, userID int) (*entity.Quote, error) {
+	u, err := ucase.repo.Unlike(quoteID, userID)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
 
-// 	return u, nil
-// }
+	return u, nil
+}
 
 func (ucase *QuoteUseCase) GetByID(ID int) (*entity.Quote, error) {
 	u, err := ucase.repo.GetByID(ID)
