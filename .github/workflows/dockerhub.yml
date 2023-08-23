@@ -37,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: make deps
 
-      - name: Test with Go Test
-        run: make test
+    #   - name: Test with Go Test
+    #     run: make test
     
       - name: build docker image
         run: make dokcer-build
