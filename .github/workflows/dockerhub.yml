@@ -37,13 +37,16 @@ jobs:
       - name: Install dependencies
         run: make deps
 
-    #   - name: Test with Go Test
-    #     run: make test
+      - name: Test with Go Test
+        run: make test
+        
+      - name: Test with Go Test with Coverage
+        run: make test-coverage
     
-      - name: build docker image
+      - name: Build docker image
         run: make docker-build
 
-      - name: build docker image
+      - name: Push docker image to Dockerhub
         run: make docker-push
 
       - name: Logout from DockerHub

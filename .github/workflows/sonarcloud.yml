@@ -33,8 +33,11 @@ jobs:
       - name: Install dependencies
         run: make deps
 
-    #   - name: Test with Go Test
-    #     run: go test -v ./... -coverprofile=coverage.out
+      - name: Test with Go Test
+        run: make test
+        
+      - name: Test with Go Test with Coverage
+        run: make test-coverage
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master

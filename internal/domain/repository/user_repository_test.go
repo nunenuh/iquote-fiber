@@ -53,11 +53,10 @@ func TestIUserRepository_GetByID(t *testing.T) {
 	// Set the mock behavior for the GetByID method
 	expectedUser := &entity.User{ID: 1, FullName: "John Doe"}
 	mock.GetByIDFunc = func(ID int) (*entity.User, error) {
-		x := expectedUser.ID
-		if x != ID {
+		if expectedUser.ID != ID {
 			return nil, fmt.Errorf("user not found")
 		}
-		return nil, fmt.Errorf("user not found")
+		return expectedUser, nil
 	}
 
 	// Create an instance of the IUserRepository interface using the mock

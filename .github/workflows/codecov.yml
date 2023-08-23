@@ -30,7 +30,10 @@ jobs:
       - name: Install dependencies
         run: make deps
 
-      - name: Test with Go Test and Coverage
+      - name: Test with Go Test
+        run: make test
+        
+      - name: Test with Go Test with Coverage
         run: make test-coverage
 
       - name: Upload coverage reports to Codecov
