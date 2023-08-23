@@ -10,6 +10,10 @@ run:
 test:
 	@go test ./... -v
 
+test-coverage:
+	@go test -v ./... -coverprofile=coverage.out
+	@go tool cover -func=coverage.out
+
 # Build the application
 build:
 	@go mod tidy
