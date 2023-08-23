@@ -1,12 +1,12 @@
 version: '3.8'
 
 networks:
-  api:
+  iquote-fiber-api:
     driver: bridge
 
 services:
-  db:
-    container_name: api_db
+  iquote-fiber-db:
+    container_name: iquote-fiber-db
     image: postgres:14.5-alpine
     restart: always
     environment:
@@ -18,10 +18,10 @@ services:
     #   - ./data=/data
     # command: postgres -c 'max_connections=5000'
     networks:
-      - api
+      - iquote-fiber-api
 
-  api:
-    container_name: api
+  iquote-fiber-api:
+    container_name: iquote-fiber-api
     image: docker.io/nunenuh/iquote-fiber-clean-arch:latest
     restart: always
     environment:
@@ -29,7 +29,7 @@ services:
           - APP_ENV=${APP_ENV}
           - APP_HOST=${APP_HOST}
           - APP_PORT=${APP_PORT}
-          - DB_HOST=db
+          - DB_HOST=iquote-fiber-db
           - DB_PORT=${DB_PORT}
           - DB_USER=${DB_USER}
           - DB_PASS=${DB_PASS}
@@ -44,6 +44,6 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     depends_on:
-      - db
+      - iquote-fiber-db
     networks:
-      - api
+      - iquote-fiber-api
