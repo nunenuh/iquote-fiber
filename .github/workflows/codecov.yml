@@ -1,4 +1,4 @@
-name: CodeCoverage
+name: CodeCoverage Action
 
 on:
   push:
