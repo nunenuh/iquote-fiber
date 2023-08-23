@@ -25,23 +25,42 @@ func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*entity.Quote, error
 	return u, nil
 }
 
-// func (ucase *QuoteUseCase) GetByAuthor(name string) ([]*entity.Quote, error) {
-// 	u, err := ucase.repo.GetByAuthor(name)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (ucase *QuoteUseCase) GetByAuthorName(name string, limit int, offset int) ([]*entity.Quote, error) {
+	u, err := ucase.repo.GetByAuthorName(name, limit, offset)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return u, nil
-// }
-// func (ucase *QuoteUseCase) GetByCategory(category string) ([]*entity.Quote, error) {
-// 	u, err := ucase.repo.GetByCategory(category)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	return u, nil
+}
 
-// 	return u, nil
+func (ucase *QuoteUseCase) GetByAuthorID(ID int, limit int, offset int) ([]*entity.Quote, error) {
+	u, err := ucase.repo.GetByAuthorID(ID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
 
-// }
+	return u, nil
+}
+
+func (ucase *QuoteUseCase) GetByCategoryName(name string, limit int, offset int) ([]*entity.Quote, error) {
+	u, err := ucase.repo.GetByCategoryName(name, limit, offset)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
+
+	return u, nil
+}
+
+func (ucase *QuoteUseCase) GetByCategoryID(ID int, limit int, offset int) ([]*entity.Quote, error) {
+	u, err := ucase.repo.GetByCategoryID(ID, limit, offset)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
+
+	return u, nil
+}
+
 // func (ucase *QuoteUseCase) GetByTags(tags string) ([]*entity.Quote, error) {
 // 	u, err := ucase.repo.GetByTags(tags)
 // 	if err != nil {
@@ -56,20 +75,22 @@ func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*entity.Quote, error
 // 		return nil, err
 // 	}
 
-// 	return u, nil
-// }
-// func (ucase *QuoteUseCase) Like(quoteID int, userID int) (*entity.Quote, error) {
-// 	u, err := ucase.repo.Like(quoteID, userID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+//		return u, nil
+//	}
 
-// 	return u, nil
-// }
+func (ucase *QuoteUseCase) Like(quoteID int, userID int) (*entity.Quote, error) {
+	u, err := ucase.repo.Like(quoteID, userID)
+	if err != nil {
+		return nil, exception.NewRepositoryError(err.Error())
+	}
+
+	return u, nil
+}
+
 // func (ucase *QuoteUseCase) Unlike(quoteID int, userID int) (*entity.Author, error) {
 // 	u, err := ucase.repo.Unlike(quoteID, userID)
 // 	if err != nil {
-// 		return nil, err
+// 		return nil, exception.NewRepositoryError(err.Error())
 // 	}
 
 // 	return u, nil
