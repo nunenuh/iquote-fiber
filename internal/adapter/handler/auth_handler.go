@@ -15,17 +15,19 @@ import (
 // const secret = "asecret"
 
 type AuthHandler struct {
-	repo repository.IUserRepository
+	repo    repository.IUserRepository
+	usecase *usecase.AuthUsecase
 }
 
 func NewAuthHandler(userRepository repository.IUserRepository) *AuthHandler {
 	return &AuthHandler{
-		repo: userRepository,
+		repo:    userRepository,
+		usecase: usecase.NewAuthUsecase(userRepository),
 	}
 }
 
 func (h *AuthHandler) Register(route fiber.Router) {
-	route.Post("/login", h.signInUser)
+	route.Post("/login", h.Login)
 	route.Get("/verify", middleware.Protected(), h.VerifyToken)
 	route.Get("/refresh", middleware.Protected(), h.RefreshToken)
 
@@ -35,7 +37,7 @@ func ProvideAuthHandler(repo repository.IUserRepository) *AuthHandler {
 	return NewAuthHandler(repo)
 }
 
-func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	// Get request body.
 	request := &dto.LoginRequest{}
@@ -46,12 +48,11 @@ func (h *AuthHandler) signInUser(c *fiber.Ctx) error {
 		})
 	}
 
-	authUsecase := usecase.NewAuthUsecase(h.repo)
-	user, err := authUsecase.Login(request.Username, request.Password)
+	user, err := h.usecase.Login(request.Username, request.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "fail use case",
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 
