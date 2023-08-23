@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // ProvideDatabaseConnection now returns a function, not fx.Option
@@ -20,8 +23,19 @@ func Connection(config config.Configuration) (db *gorm.DB, err error) {
 	dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
 		config.DBHost, config.DBUser, config.DBPass, config.DBName)
 
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // You can replace os.Stdout with a log file if desired
+			logger.Config{
+				SlowThreshold: time.Second, // Set the threshold for slow query logging
+				LogLevel:      logger.Info, // Log level for the logger
+				Colorful:      true,        // Set to true to enable colorful output
+			},
+		),
+	})
+
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 
