@@ -1,0 +1,49 @@
+version: '3.8'
+
+networks:
+  api:
+    driver: bridge
+
+services:
+  db:
+    container_name: api_db
+    image: postgres:14.5-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: /data
+    # volumes:
+    #   - ./data=/data
+    # command: postgres -c 'max_connections=5000'
+    networks:
+      - api
+
+  api:
+    container_name: api
+    image: docker.io/nunenuh/iquote-fiber-clean-arch:latest
+    restart: always
+    environment:
+          - APP_NAME=${APP_NAME}
+          - APP_ENV=${APP_ENV}
+          - APP_HOST=${APP_HOST}
+          - APP_PORT=${APP_PORT}
+          - DB_HOST=db
+          - DB_PORT=${DB_PORT}
+          - DB_USER=${DB_USER}
+          - DB_PASS=${DB_PASS}
+          - DB_NAME=${DB_NAME}
+          - DB_MAX_OPEN_CONNS=${DB_MAX_OPEN_CONNS}
+          - DB_MAX_IDLE_CONNS=${DB_MAX_IDLE_CONNS}
+          - REDIS_HOST=redis
+          - REDIS_PORT=${REDIS_PORT}
+          - REDIS_PASS=${REDIS_PASS}
+          - JWT_SECRET=${JWT_SECRET}
+          - JWT_EXPIRE=${JWT_EXPIRE}
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      - db
+    networks:
+      - api

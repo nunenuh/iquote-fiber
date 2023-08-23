@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  'latest':
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_LOGIN: ${GITHUB_LOGIN}
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    image: nunenuh/iquote-fiber-clean-arch:latest
