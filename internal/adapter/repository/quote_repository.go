@@ -68,6 +68,34 @@ func (r *quoteRepository) Like(quoteID int, userID int) (*entity.Quote, error) {
 	return out, nil
 }
 
+func (r *quoteRepository) Unlike(quoteID int, userID int) (*entity.Quote, error) {
+	db := r.DB
+
+	// Find user and quote
+	var user model.User
+	var quote model.Quote
+
+	if err := db.First(&user, userID).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	if err := db.First(&quote, quoteID).Error; err != nil {
+		return nil, fmt.Errorf("quote not found: %w", err)
+	}
+
+	// Remove user from the quote's liked users in the join table
+	if err := db.Model(&quote).Association("UserWhoLiked").Delete(&user); err != nil {
+		return nil, fmt.Errorf("failed to unlike quote: %w", err)
+	}
+
+	quoteModel, err := r.FindByID(quoteID)
+	if err != nil {
+		return nil, err
+	}
+	out := r.Mapper.ToEntity(quoteModel)
+	return out, nil
+}
+
 func (r *quoteRepository) GetByAuthorName(name string, limit int, offset int) ([]*entity.Quote, error) {
 	db := r.DB
 	var quoteModel []model.Quote

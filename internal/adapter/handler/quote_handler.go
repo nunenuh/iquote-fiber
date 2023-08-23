@@ -35,6 +35,7 @@ func (h *QuoteHandler) Register(route fiber.Router) {
 	route.Get("/category/id/:categoryID", h.GetByCategoryID)
 
 	route.Get("/like/:quoteID", h.Like)
+	route.Get("/unlike/:quoteID", h.Unlike)
 
 	route.Get("/:quoteID", h.GetByID)
 	route.Post("/create", h.Create)
@@ -136,8 +137,9 @@ func (h *QuoteHandler) GetByAuthorID(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   u,
+		"status":  "success",
+		"message": "Like quote successful",
+		"data":    u,
 	})
 }
 
@@ -166,8 +168,40 @@ func (h *QuoteHandler) Like(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   u,
+		"status":  "success",
+		"message": "Like quote successful",
+		"data":    u,
+	})
+}
+
+func (h *QuoteHandler) Unlike(ctx *fiber.Ctx) error {
+	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+
+	quoteIDStr := ctx.Params("quoteID")
+	quoteID, err := strconv.Atoi(quoteIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid authorID",
+		})
+	}
+
+	user := ctx.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userID := int(claims["user_id"].(float64))
+
+	u, err := h.usecase.Unlike(quoteID, userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error fetching quotes",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
+		"status":  "success",
+		"message": "Like quote successful",
+		"data":    u,
 	})
 }
 
