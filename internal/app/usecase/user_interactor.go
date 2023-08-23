@@ -63,14 +63,16 @@ func (ucase *UserUsecase) Create(user *entity.User) (*entity.User, error) {
 		return nil, exception.NewValidatorError(err.Error())
 	}
 
+	hashedPass, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = hashedPass
+
 	u, err := ucase.repo.Create(user)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
-	}
-
-	u.Password, err = utils.HashPassword(u.Password)
-	if err != nil {
-		return nil, err
 	}
 	return u, nil
 }
@@ -81,14 +83,16 @@ func (ucase *UserUsecase) Update(ID int, user *entity.User) (*entity.User, error
 		return nil, exception.NewValidatorError(err.Error())
 	}
 
+	hashedPass, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = hashedPass
+
 	u, err := ucase.repo.Update(ID, user)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
-	}
-
-	u.Password, err = utils.HashPassword(u.Password)
-	if err != nil {
-		return nil, err
 	}
 
 	return u, nil
