@@ -8,7 +8,7 @@ run:
 	@go run cmd/api/main.go
 
 test:
-	@go test ./... -v
+	@go test -v ./... 
 
 test-coverage:
 	@go test -v ./... -coverprofile=coverage.out

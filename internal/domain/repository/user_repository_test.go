@@ -1,10 +1,10 @@
 package repository
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockUserRepository struct {
@@ -28,6 +28,7 @@ func (m *mockUserRepository) GetByID(ID int) (*entity.User, error) {
 func (m *mockUserRepository) GetByUsername(username string) (*entity.User, error) {
 	return m.GetByUsernameFunc(username)
 }
+
 func (m *mockUserRepository) GetByEmail(email string) (*entity.User, error) {
 	return m.GetByEmailFunc(email)
 }
@@ -43,33 +44,161 @@ func (m *mockUserRepository) Update(ID int, user *entity.User) (*entity.User, er
 func (m *mockUserRepository) Delete(ID int) error {
 	return m.DeleteFunc(ID)
 }
-
-// Implement mock functions for the other methods if needed
-
-func TestIUserRepository_GetByID(t *testing.T) {
-	// Create a new instance of the mockUserRepository
-	mock := &mockUserRepository{}
-
-	// Set the mock behavior for the GetByID method
-	expectedUser := &entity.User{ID: 1, FullName: "John Doe"}
-	mock.GetByIDFunc = func(ID int) (*entity.User, error) {
-		if expectedUser.ID != ID {
-			return nil, fmt.Errorf("user not found")
-		}
-		return expectedUser, nil
+func TestMockUserRepositoryGetAll(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		GetAllFunc: func(limit int, offset int) ([]*entity.User, error) {
+			// Implement the mock logic for GetAllFunc
+			users := []*entity.User{
+				{ID: 1, FullName: "John Doe"},
+				{ID: 2, FullName: "Jane Smith"},
+			}
+			return users, nil
+		},
 	}
 
-	// Create an instance of the IUserRepository interface using the mock
-	repository := IUserRepository(mock)
+	// Call the GetAll method on the mock repository
+	users, err := mockRepo.GetAll(10, 0)
 
-	// Call the GetByID method and assert the result
-	user, err := repository.GetByID(1)
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
-	}
-	if user != expectedUser {
-		t.Errorf("expected user: %v, got: %v", expectedUser, user)
-	}
+	// Assert that the returned users are as expected
+	assert.NoError(t, err)
+	assert.Len(t, users, 2)
+	assert.Equal(t, "John Doe", users[0].FullName)
+	assert.Equal(t, "Jane Smith", users[1].FullName)
 }
 
-// Write additional unit tests for the other methods if needed
+func TestMockUserRepositoryGetByID(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		GetByIDFunc: func(id int) (*entity.User, error) {
+			// Implement the mock logic for GetByIDFunc
+			user := &entity.User{
+				ID:       id,
+				FullName: "John Doe",
+			}
+			return user, nil
+		},
+	}
+
+	// Call the GetByID method on the mock repository
+	user, err := mockRepo.GetByID(1)
+
+	// Assert that the returned user is as expected
+	assert.NoError(t, err)
+	assert.Equal(t, 1, user.ID)
+	assert.Equal(t, "John Doe", user.FullName)
+}
+
+func TestMockUserRepositoryGetByUsername(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		GetByUsernameFunc: func(username string) (*entity.User, error) {
+			// Implement the mock logic for GetByUsernameFunc
+			user := &entity.User{
+				ID:       1,
+				FullName: "John Doe",
+				Username: username,
+			}
+			return user, nil
+		},
+	}
+
+	// Call the GetByUsername method on the mock repository
+	user, err := mockRepo.GetByUsername("johndoe")
+
+	// Assert that the returned user is as expected
+	assert.NoError(t, err)
+	assert.Equal(t, 1, user.ID)
+	assert.Equal(t, "John Doe", user.FullName)
+	assert.Equal(t, "johndoe", user.Username)
+}
+
+func TestMockUserRepositoryGetByEmail(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		GetByEmailFunc: func(email string) (*entity.User, error) {
+			// Implement the mock logic for GetByEmailFunc
+			user := &entity.User{
+				ID:       1,
+				FullName: "John Doe",
+				Email:    email,
+			}
+			return user, nil
+		},
+	}
+
+	// Call the GetByEmail method on the mock repository
+	user, err := mockRepo.GetByEmail("johndoe@example.com")
+
+	// Assert that the returned user is as expected
+	assert.NoError(t, err)
+	assert.Equal(t, 1, user.ID)
+	assert.Equal(t, "John Doe", user.FullName)
+	assert.Equal(t, "johndoe@example.com", user.Email)
+}
+
+func TestMockUserRepositoryCreate(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		CreateFunc: func(user *entity.User) (*entity.User, error) {
+			// Implement the mock logic for CreateFunc
+			user.ID = 1
+			return user, nil
+		},
+	}
+
+	// Create a user entity
+	user := &entity.User{
+		FullName: "John Doe",
+	}
+
+	// Call the Create method on the mock repository
+	createdUser, err := mockRepo.Create(user)
+
+	// Assert that the created user is as expected
+	assert.NoError(t, err)
+	assert.Equal(t, 1, createdUser.ID)
+	assert.Equal(t, "John Doe", createdUser.FullName)
+}
+
+func TestMockUserRepositoryUpdate(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		UpdateFunc: func(ID int, user *entity.User) (*entity.User, error) {
+			// Implement the mock logic for UpdateFunc
+			user.ID = ID
+			return user, nil
+		},
+	}
+
+	// Create a user entity
+	user := &entity.User{
+		ID:       1,
+		FullName: "John Doe",
+	}
+
+	// Call the Update method on the mock repository
+	updatedUser, err := mockRepo.Update(1, user)
+
+	// Assert that the updated user is as expected
+	assert.NoError(t, err)
+	assert.Equal(t, 1, updatedUser.ID)
+	assert.Equal(t, "John Doe", updatedUser.FullName)
+}
+
+func TestMockUserRepositoryDelete(t *testing.T) {
+	// Create an instance of the mockUserRepository
+	mockRepo := &mockUserRepository{
+		DeleteFunc: func(ID int) error {
+			// Implement the mock logic for DeleteFunc
+			return nil
+		},
+	}
+
+	// Call the Delete method on the mock repository
+	err := mockRepo.Delete(1)
+
+	// Assert that the error is as expected
+	assert.NoError(t, err)
+
+}

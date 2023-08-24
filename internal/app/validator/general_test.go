@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidator_Validate(t *testing.T) {
+func TestValidatorValidate(t *testing.T) {
 	v := NewValidator()
 
 	// Test case 1: Valid entity

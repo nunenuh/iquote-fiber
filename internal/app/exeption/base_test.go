@@ -2,9 +2,11 @@ package exception
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestAppError_Error(t *testing.T) {
+func TestAppErrorError(t *testing.T) {
 	tests := []struct {
 		name   string
 		appErr AppError
@@ -18,11 +20,10 @@ func TestAppError_Error(t *testing.T) {
 		// Add more test cases here
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.appErr.Error(); got != tt.want {
-				t.Errorf("AppError.Error() = %v, want %v", got, tt.want)
-			}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := test.appErr.Error()
+			assert.Equal(t, test.want, got)
 		})
 	}
 }
