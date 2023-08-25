@@ -88,6 +88,7 @@ func main() {
 		fx.Provide(database.ProvideDatabaseConnection()),
 		fx.Provide(
 			createApp,
+			auth.ProvideAuthRepository,
 			user.ProvideUserRepository,
 			author.ProvideAuthorRepository,
 			category.ProvideCategoryRepository,
