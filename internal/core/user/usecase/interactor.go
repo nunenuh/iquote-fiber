@@ -7,20 +7,20 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/core/utils/validator"
 )
 
-type userUsecase struct {
+type UserUsecase struct {
 	repo      domain.IUserRepository
 	validator *validator.Validator
 }
 
-func NewUserUsecase(r domain.IUserRepository) *userUsecase {
+func NewUserUsecase(r domain.IUserRepository) *UserUsecase {
 	validator := validator.NewValidator()
-	return &userUsecase{
+	return &UserUsecase{
 		repo:      r,
 		validator: validator,
 	}
 }
 
-func (ucase *userUsecase) GetAll(limit int, offset int) ([]*domain.User, error) {
+func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*domain.User, error) {
 	u, err := ucase.repo.GetAll(limit, offset)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
@@ -29,7 +29,7 @@ func (ucase *userUsecase) GetAll(limit int, offset int) ([]*domain.User, error) 
 	return u, nil
 }
 
-func (ucase *userUsecase) GetByID(ID int) (*domain.User, error) {
+func (ucase *UserUsecase) GetByID(ID int) (*domain.User, error) {
 	u, err := ucase.repo.GetByID(ID)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
@@ -38,7 +38,7 @@ func (ucase *userUsecase) GetByID(ID int) (*domain.User, error) {
 	return u, nil
 }
 
-func (ucase *userUsecase) GetByUsername(username string) (*domain.User, error) {
+func (ucase *UserUsecase) GetByUsername(username string) (*domain.User, error) {
 	u, err := ucase.repo.GetByUsername(username)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
@@ -47,7 +47,7 @@ func (ucase *userUsecase) GetByUsername(username string) (*domain.User, error) {
 	return u, nil
 }
 
-func (ucase *userUsecase) GetByEmail(email string) (*domain.User, error) {
+func (ucase *UserUsecase) GetByEmail(email string) (*domain.User, error) {
 	u, err := ucase.repo.GetByEmail(email)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
@@ -56,7 +56,7 @@ func (ucase *userUsecase) GetByEmail(email string) (*domain.User, error) {
 	return u, nil
 }
 
-func (ucase *userUsecase) Create(user *domain.User) (*domain.User, error) {
+func (ucase *UserUsecase) Create(user *domain.User) (*domain.User, error) {
 	err := ucase.validator.Validate(user)
 	if err != nil {
 		return nil, exception.NewValidatorError(err.Error())
@@ -76,7 +76,7 @@ func (ucase *userUsecase) Create(user *domain.User) (*domain.User, error) {
 	return u, nil
 }
 
-func (ucase *userUsecase) Update(ID int, user *domain.User) (*domain.User, error) {
+func (ucase *UserUsecase) Update(ID int, user *domain.User) (*domain.User, error) {
 	err := ucase.validator.Validate(user)
 	if err != nil {
 		return nil, exception.NewValidatorError(err.Error())
@@ -97,7 +97,7 @@ func (ucase *userUsecase) Update(ID int, user *domain.User) (*domain.User, error
 	return u, nil
 }
 
-func (ucase *userUsecase) Delete(ID int) error {
+func (ucase *UserUsecase) Delete(ID int) error {
 	_, errGet := ucase.repo.GetByID(ID)
 	if errGet != nil {
 		return exception.NewRepositoryError(errGet.Error())

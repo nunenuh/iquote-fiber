@@ -10,13 +10,19 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/infra/auth"
 )
 
-type CategoryHandler struct {
-	categoryRepository domain.ICategoryRepository
+func ProvideCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
+	return NewCategoryHandler(repo)
 }
 
-func NewCategoryHandler(categoryRepository domain.ICategoryRepository) *CategoryHandler {
+type CategoryHandler struct {
+	repo    domain.ICategoryRepository
+	usecase *usecase.CategoryUsecase
+}
+
+func NewCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
 	return &CategoryHandler{
-		categoryRepository: categoryRepository,
+		repo:    repo,
+		usecase: usecase.NewCategoryUsecase(repo),
 	}
 }
 
@@ -30,29 +36,31 @@ func (h *CategoryHandler) Register(route fiber.Router) {
 	route.Delete("/:categoryID", h.Delete)
 }
 
-func ProvideCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
-	return NewCategoryHandler(repo)
-}
-
 func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid category ID",
+		})
 	}
 
-	u, err := categoryUsecase.GetByID(id)
-
+	category, err := h.usecase.GetByID(id)
+	if err != nil {
+		log.Println(err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   category,
 	})
 }
 
 func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
-
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
 
@@ -72,24 +80,22 @@ func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	u, err := categoryUsecase.GetAll(limit, offset)
+	categories, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error fetching categorys",
+			"message": err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   categories,
 	})
 
 }
 
 func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
-
 	var category domain.Category
 
 	if err := ctx.BodyParser(&category); err != nil {
@@ -100,7 +106,7 @@ func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdUser, err := categoryUsecase.Create(&category)
+	createdCategory, err := h.usecase.Create(&category)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -111,13 +117,11 @@ func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   createdUser,
+		"data":   createdCategory,
 	})
 }
 
 func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
-
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -134,7 +138,7 @@ func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := categoryUsecase.Update(id, &category)
+	updatedCategory, err := h.usecase.Update(id, &category)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -145,13 +149,11 @@ func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   updatedUser,
+		"data":   updatedCategory,
 	})
 }
 
 func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
-	categoryUsecase := usecase.NewCategoryUsecase(h.categoryRepository)
-
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -161,7 +163,7 @@ func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = categoryUsecase.Delete(id)
+	err = h.usecase.Delete(id)
 	if err != nil {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -173,6 +175,6 @@ func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "success",
-		"message": "User deleted successfully",
+		"message": "Category deleted successfully",
 	})
 }

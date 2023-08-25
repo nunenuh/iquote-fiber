@@ -11,12 +11,14 @@ import (
 )
 
 type AuthorHandler struct {
-	authorRepository domain.IAuthorRepository
+	repo    domain.IAuthorRepository
+	usecase *usecase.AuthorUsecase
 }
 
-func NewAuthorHandler(authorRepository domain.IAuthorRepository) *AuthorHandler {
+func NewAuthorHandler(repo domain.IAuthorRepository) *AuthorHandler {
 	return &AuthorHandler{
-		authorRepository: authorRepository,
+		repo:    repo,
+		usecase: usecase.NewAuthorUsecase(repo),
 	}
 }
 
@@ -34,14 +36,20 @@ func (h *AuthorHandler) Register(route fiber.Router) {
 }
 
 func (h *AuthorHandler) GetByID(ctx *fiber.Ctx) error {
-	authorUsecase := usecase.NewAuthorUsecase(h.authorRepository)
 	idStr := ctx.Params("authorID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	u, err := authorUsecase.GetByID(id)
+	u, err := h.usecase.GetByID(id)
+	if err != nil {
+		log.Println(err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error fetching author",
+		})
+	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
@@ -50,7 +58,6 @@ func (h *AuthorHandler) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthorHandler) GetAll(ctx *fiber.Ctx) error {
-	authorUsecase := usecase.NewAuthorUsecase(h.authorRepository)
 
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
@@ -71,7 +78,7 @@ func (h *AuthorHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	u, err := authorUsecase.GetAll(limit, offset)
+	u, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -87,8 +94,6 @@ func (h *AuthorHandler) GetAll(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthorHandler) Create(ctx *fiber.Ctx) error {
-	authorUsecase := usecase.NewAuthorUsecase(h.authorRepository)
-
 	var author domain.Author
 
 	if err := ctx.BodyParser(&author); err != nil {
@@ -99,7 +104,7 @@ func (h *AuthorHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdUser, err := authorUsecase.Create(&author)
+	createdUser, err := h.usecase.Create(&author)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -115,12 +120,13 @@ func (h *AuthorHandler) Create(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthorHandler) Update(ctx *fiber.Ctx) error {
-	authorUsecase := usecase.NewAuthorUsecase(h.authorRepository)
-
 	idStr := ctx.Params("authorID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid author ID format",
+		})
 	}
 
 	author := domain.Author{}
@@ -133,7 +139,7 @@ func (h *AuthorHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := authorUsecase.Update(id, &author)
+	updatedUser, err := h.usecase.Update(id, &author)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -149,8 +155,6 @@ func (h *AuthorHandler) Update(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthorHandler) Delete(ctx *fiber.Ctx) error {
-	authorUsecase := usecase.NewAuthorUsecase(h.authorRepository)
-
 	idStr := ctx.Params("authorID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -160,7 +164,7 @@ func (h *AuthorHandler) Delete(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = authorUsecase.Delete(id)
+	err = h.usecase.Delete(id)
 	if err != nil {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

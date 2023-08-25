@@ -12,11 +12,16 @@ const (
 const (
 	RepositoryError ErrorType = iota
 	ValidatorError
+	ServiceError
 	OtherError
 )
 
 func NewRepositoryError(msg string) AppError {
 	return AppError{Type: RepositoryError, Message: msg}
+}
+
+func NewServiceError(msg string) AppError {
+	return AppError{Type: ServiceError, Message: msg}
 }
 
 func NewValidatorError(msg string) AppError {

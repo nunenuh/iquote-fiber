@@ -1,7 +1,6 @@
 package auth
 
 import (
-	// "github.com/nunenuh/iquote-fiber/internal/adapter/database/model"
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
 	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
 )

@@ -1,8 +1,6 @@
 package usecase
 
 import (
-	"log"
-
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
 	"github.com/nunenuh/iquote-fiber/internal/core/utils/exception"
 	"github.com/nunenuh/iquote-fiber/internal/core/utils/hash"
@@ -10,25 +8,57 @@ import (
 
 type AuthUsecase struct {
 	repo domain.IAuthRepository
+	svc  domain.IAuthService
 }
 
-func NewAuthUsecase(repo domain.IAuthRepository) *AuthUsecase {
+func NewAuthUsecase(repo domain.IAuthRepository, svc domain.IAuthService) *AuthUsecase {
 	return &AuthUsecase{
 		repo: repo,
+		svc:  svc,
 	}
 }
 
-func (ucase *AuthUsecase) Login(username string, password string) (*domain.Auth, error) {
-	user, err := ucase.repo.GetByUsername(username)
+func (ucase *AuthUsecase) Login(username string, password string) (string, error) {
+	auth, err := ucase.repo.GetByUsername(username)
 	if err != nil {
-		return nil, exception.NewOtherError("Forbidden!")
+		return "", exception.NewOtherError("Forbidden!")
 	}
 
-	log.Printf("username: %s, password: %s", username, user.Password)
-
-	if !hash.CheckHashPassword(password, user.Password) {
-		return nil, exception.NewOtherError("Invalid Credentials!")
+	if !hash.CheckHashPassword(password, auth.Password) {
+		return "", exception.NewOtherError("Invalid Credentials!")
 	}
 
-	return user, nil
+	tokenString, err := ucase.svc.GenerateToken(*auth)
+	if err != nil {
+		return "", exception.NewServiceError("Failed to generate token!")
+	}
+
+	return tokenString, nil
+}
+
+func (ucase *AuthUsecase) GenerateToken(auth domain.Auth) (string, error) {
+	tokenString, err := ucase.svc.GenerateToken(auth)
+	if err != nil {
+		return "", exception.NewServiceError("Failed to generate token!")
+	}
+
+	return tokenString, nil
+}
+
+func (ucase *AuthUsecase) RefreshToken(token string) (string, error) {
+	tokenString, err := ucase.svc.RefreshToken(token)
+	if err != nil {
+		return "", exception.NewServiceError("Failed to refresh token!")
+	}
+
+	return tokenString, nil
+}
+
+func (ucase *AuthUsecase) VerifyToken(tokenString string) (*domain.CustomClaims, error) {
+	cClaims, err := ucase.svc.VerifyToken(tokenString)
+	if err != nil {
+		return nil, exception.NewServiceError("Verify token failed!")
+	}
+
+	return cClaims, nil
 }
