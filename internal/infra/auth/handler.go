@@ -2,23 +2,19 @@ package auth
 
 import (
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/usecase"
-	// "github.com/nunenuh/iquote-fiber/internal/infra/auth"
 )
 
-// const secret = "asecret"
-
 type AuthHandler struct {
-	repo    domain.IAuthorRepository
+	repo    domain.IAuthRepository
 	usecase *usecase.AuthUsecase
 }
 
-func NewAuthHandler(userRepository domain.IAuthorRepository) *AuthHandler {
+func NewAuthHandler(userRepository domain.IAuthRepository) *AuthHandler {
 	return &AuthHandler{
 		repo:    userRepository,
 		usecase: usecase.NewAuthUsecase(userRepository),
@@ -32,7 +28,7 @@ func (h *AuthHandler) Register(route fiber.Router) {
 
 }
 
-func ProvideAuthHandler(repo domain.IAuthorRepository) *AuthHandler {
+func ProvideAuthHandler(repo domain.IAuthRepository) *AuthHandler {
 	return NewAuthHandler(repo)
 }
 
@@ -47,7 +43,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := h.usecase.Login(request.Username, request.Password)
+	auth, err := h.usecase.Login(request.Username, request.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "fail use case",
@@ -55,7 +51,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := GenerateToken(user.ID)
+	token, err := GenerateToken(auth)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"status":  "fail token",
@@ -70,14 +66,26 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
-	localUser := ctx.Locals("user")
+	authorizationString := ctx.Get("Authorization")
+	parts := strings.Split(authorizationString, " ")
 
-	log.Printf("Type of localUser: %T\n", localUser)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+			"status":  "error",
+			"message": "Only Bearer Authorization are accepted!",
+		})
+	}
+	tokenString := parts[1]
+	// log.Printf("verify token:%s", tokenString)
 
-	user := ctx.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	username := claims["username"].(string)
-	// expired := claims["exp"].(float64)
+	claims, err := VerifyToken(tokenString)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+			"status":  "fail token",
+			"message": err.Error(),
+		})
+	}
+	username := claims["Username"].(string)
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status":  "success",
@@ -86,22 +94,28 @@ func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
-	localUser := ctx.Locals("user")
+	authorizationString := ctx.Get("Authorization")
+	parts := strings.Split(authorizationString, " ")
 
-	log.Printf("Type of localUser: %T\n", localUser)
-
-	token := ctx.Locals("user").(*jwt.Token)
-	tokenStr, err := RefreshToken(token)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+			"status":  "error",
+			"message": "Only Bearer Authorization are accepted!",
+		})
+	}
+	tokenString := parts[1]
+	// log.Printf("refresh token: %s", tokenString)
+	newTokenString, err := RefreshToken(tokenString)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"status":  "fail token",
-			"message": err,
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"token":  tokenStr,
+		"token":  newTokenString,
 	})
 
 }

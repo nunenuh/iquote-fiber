@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
 )
 
 var jwtHandler fiber.Handler
@@ -65,40 +67,65 @@ func jwtError(c *fiber.Ctx, err error) error {
 	})
 }
 
-func GenerateToken(userID int) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = userID
-	claims["exp"] = jwtExpire
+func GenerateToken(auth *domain.Auth) (string, error) {
+	dClaims := domain.CustomClaims{
+		UserID:      auth.ID,
+		Username:    auth.Username,
+		Email:       auth.Email,
+		IsSuperuser: auth.IsSuperuser,
+	}
 
+	b, err := json.Marshal(dClaims)
+	if err != nil {
+		return "", err
+	}
+
+	var jClaims map[string]any
+	err = json.Unmarshal(b, &jClaims)
+	if err != nil {
+		return "", err
+	}
+
+	jClaims["exp"] = jwtExpire
+
+	claims := jwt.MapClaims(jClaims)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtSecret))
 }
 
-// func ParseToken(tokenStr string) (string, error) {
-// 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-// 		return []byte(jwtSecret), nil
-// 	})
+func VerifyToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtSecret), nil
+		})
 
-// 	if err != nil {
-// 		return "", err
-// 	}
+	if err != nil {
+		return nil, err
+	}
 
-// 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-// 		userId, ok := claims["sub"].(string)
-// 		if !ok {
-// 			return "", errors.New("invalid token claims")
-// 		}
-// 		return userId, nil
-// 	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		return claims, nil
+	}
 
-// 	return "", errors.New("invalid token")
-// }
+	return nil, errors.New("invalid token")
+}
 
-func RefreshToken(token *jwt.Token) (string, error) {
+func RefreshToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtSecret), nil
+		})
+
+	if err != nil {
+		return "", err
+	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		claims["exp"] = jwtExpire
-		return token.SignedString([]byte(jwtSecret))
+		claims["exp"] = time.Now().Add(time.Minute * time.Duration(jwtExpire)).Unix()
+		newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		return newToken.SignedString([]byte(jwtSecret))
 	}
 
 	return "", errors.New("invalid token")
