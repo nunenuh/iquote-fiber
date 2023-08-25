@@ -3,7 +3,7 @@ package validator
 import (
 	"testing"
 
-	"github.com/nunenuh/iquote-fiber/internal/domain/entity"
+	"github.com/nunenuh/iquote-fiber/internal/core/user/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,17 +19,17 @@ func TestValidatorValidate(t *testing.T) {
 	assert.Error(t, v.Validate(invalidEntity))
 }
 
-func generateValidEntity() entity.User {
-	return entity.User{
+func generateValidEntity() domain.User {
+	return domain.User{
 		FullName: "John Doe",
 		Email:    "johndoe@example.com",
 		IsActive: true,
 	}
 }
 
-func generateInvalidEntity() entity.User {
+func generateInvalidEntity() domain.User {
 	// create and return an invalid entity
-	return entity.User{
+	return domain.User{
 		FullName: "John Doe",
 		Email:    "johndoe-wrong-example.com",
 		IsActive: true,

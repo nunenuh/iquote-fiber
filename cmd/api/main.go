@@ -14,11 +14,15 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/config"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/database"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/handler"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/middleware"
-	"github.com/nunenuh/iquote-fiber/internal/adapter/repository"
+	"github.com/nunenuh/iquote-fiber/internal/infra"
+	"github.com/nunenuh/iquote-fiber/internal/infra/auth"
+	"github.com/nunenuh/iquote-fiber/internal/infra/author"
+	"github.com/nunenuh/iquote-fiber/internal/infra/category"
+	"github.com/nunenuh/iquote-fiber/internal/infra/config"
+	"github.com/nunenuh/iquote-fiber/internal/infra/database"
+	"github.com/nunenuh/iquote-fiber/internal/infra/quote"
+	"github.com/nunenuh/iquote-fiber/internal/infra/user"
+
 	"go.uber.org/fx"
 )
 
@@ -27,7 +31,7 @@ func createApp(config config.Configuration) *fiber.App {
 		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
-	middleware.InitAuthMiddleware(config.JWTSecret, config.JWTExpire)
+	auth.InitAuthMiddleware(config.JWTSecret, config.JWTExpire)
 	setupMiddleware(app)
 	return app
 }
@@ -84,19 +88,19 @@ func main() {
 		fx.Provide(database.ProvideDatabaseConnection()),
 		fx.Provide(
 			createApp,
-			repository.ProvideUserRepository,
-			repository.ProvideAuthorRepository,
-			repository.ProvideCategoryRepository,
-			repository.ProvideQuoteRepository,
+			user.ProvideUserRepository,
+			author.ProvideAuthorRepository,
+			category.ProvideCategoryRepository,
+			quote.ProvideQuoteRepository,
 
-			handler.ProvideAuthHandler,
-			handler.ProvideUserHandler,
-			handler.ProvideAuthorHandler,
-			handler.ProvideCategoryHandler,
-			handler.ProvideQuoteHandler,
+			auth.ProvideAuthHandler,
+			user.ProvideUserHandler,
+			author.ProvideAuthorHandler,
+			category.ProvideCategoryHandler,
+			quote.ProvideQuoteHandler,
 		),
 		fx.Invoke(
-			handler.RegisterRoutes,
+			infra.RegisterRoutes,
 			startApp,
 			// ... other invokable functions
 		),
