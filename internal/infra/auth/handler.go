@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,15 +10,19 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/usecase"
 )
 
+func ProvideAuthHandler(repo domain.IAuthRepository, svc domain.IAuthService) *AuthHandler {
+	return NewAuthHandler(repo, svc)
+}
+
 type AuthHandler struct {
 	repo    domain.IAuthRepository
 	usecase *usecase.AuthUsecase
 }
 
-func NewAuthHandler(userRepository domain.IAuthRepository) *AuthHandler {
+func NewAuthHandler(repo domain.IAuthRepository, svc domain.IAuthService) *AuthHandler {
 	return &AuthHandler{
-		repo:    userRepository,
-		usecase: usecase.NewAuthUsecase(userRepository),
+		repo:    repo,
+		usecase: usecase.NewAuthUsecase(repo, svc),
 	}
 }
 
@@ -28,34 +33,22 @@ func (h *AuthHandler) Register(route fiber.Router) {
 
 }
 
-func ProvideAuthHandler(repo domain.IAuthRepository) *AuthHandler {
-	return NewAuthHandler(repo)
-}
-
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	// Get request body.
 	request := &LoginRequest{}
 	if err := c.BodyParser(request); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"status":  "fail",
+			"status":  "error",
 			"message": err.Error(),
 		})
 	}
 
-	auth, err := h.usecase.Login(request.Username, request.Password)
+	token, err := h.usecase.Login(request.Username, request.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-			"status":  "fail use case",
+			"status":  "error",
 			"message": err.Error(),
-		})
-	}
-
-	token, err := GenerateToken(auth)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"status":  "fail token",
-			"message": err,
 		})
 	}
 
@@ -66,26 +59,22 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
-	authorizationString := ctx.Get("Authorization")
-	parts := strings.Split(authorizationString, " ")
-
-	if len(parts) != 2 || parts[0] != "Bearer" {
+	tokenString, err := h.getTokenString(ctx)
+	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "error",
-			"message": "Only Bearer Authorization are accepted!",
+			"message": err.Error(),
 		})
 	}
-	tokenString := parts[1]
-	// log.Printf("verify token:%s", tokenString)
 
-	claims, err := VerifyToken(tokenString)
+	claims, err := h.usecase.VerifyToken(tokenString)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "fail token",
 			"message": err.Error(),
 		})
 	}
-	username := claims["Username"].(string)
+	username := claims.Username
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status":  "success",
@@ -94,18 +83,15 @@ func (h *AuthHandler) VerifyToken(ctx *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
-	authorizationString := ctx.Get("Authorization")
-	parts := strings.Split(authorizationString, " ")
-
-	if len(parts) != 2 || parts[0] != "Bearer" {
+	tokenString, err := h.getTokenString(ctx)
+	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "error",
-			"message": "Only Bearer Authorization are accepted!",
+			"message": err.Error(),
 		})
 	}
-	tokenString := parts[1]
-	// log.Printf("refresh token: %s", tokenString)
-	newTokenString, err := RefreshToken(tokenString)
+
+	newTokenString, err := h.usecase.RefreshToken(tokenString)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"status":  "error",
@@ -118,4 +104,17 @@ func (h *AuthHandler) RefreshToken(ctx *fiber.Ctx) error {
 		"token":  newTokenString,
 	})
 
+}
+
+func (h *AuthHandler) getTokenString(ctx *fiber.Ctx) (string, error) {
+	authorizationString := ctx.Get("Authorization")
+	parts := strings.Split(authorizationString, " ")
+
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", errors.New("Only Bearer Authorization are accepted!")
+	}
+
+	tokenString := parts[1]
+
+	return tokenString, nil
 }

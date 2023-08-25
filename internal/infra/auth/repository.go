@@ -5,29 +5,27 @@ import (
 	"log"
 
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
-
 	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
-
 	"gorm.io/gorm"
 )
 
 func ProvideAuthRepository(db *gorm.DB) domain.IAuthRepository {
-	return NewUserRepository(db)
+	return NeAuthRepository(db)
 }
 
-type userRepository struct {
+type authRepository struct {
 	DB     *gorm.DB
 	Mapper *UserMapper
 }
 
-func NewUserRepository(db *gorm.DB) *userRepository {
-	return &userRepository{
+func NeAuthRepository(db *gorm.DB) *authRepository {
+	return &authRepository{
 		DB:     db,
 		Mapper: NewUserMapper(),
 	}
 }
 
-func (r *userRepository) FindByID(ID int) (*model.User, error) {
+func (r *authRepository) FindByID(ID int) (*model.User, error) {
 	db := r.DB
 	var user model.User
 	result := db.First(&user, ID)
@@ -38,7 +36,7 @@ func (r *userRepository) FindByID(ID int) (*model.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) GetByUsername(username string) (*domain.Auth, error) {
+func (r *authRepository) GetByUsername(username string) (*domain.Auth, error) {
 	db := r.DB
 	var user model.User
 	result := db.Where("username = ?", username).First(&user)
