@@ -8,7 +8,6 @@ import (
 	"github.com/nunenuh/iquote-fiber/internal/core/category/domain"
 	"github.com/nunenuh/iquote-fiber/internal/core/category/usecase"
 	"github.com/nunenuh/iquote-fiber/internal/infra/auth"
-	// "github.com/nunenuh/iquote-fiber/internal/domain/entity"
 )
 
 type CategoryHandler struct {
