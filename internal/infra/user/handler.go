@@ -11,12 +11,14 @@ import (
 )
 
 type UserHandler struct {
-	userRepository domain.IUserRepository
+	repo    domain.IUserRepository
+	usecase *usecase.UserUsecase
 }
 
-func NewUserHandler(userRepository domain.IUserRepository) *UserHandler {
+func NewUserHandler(repo domain.IUserRepository) *UserHandler {
 	return &UserHandler{
-		userRepository: userRepository,
+		repo:    repo,
+		usecase: usecase.NewUserUsecase(repo),
 	}
 }
 
@@ -34,23 +36,29 @@ func ProvideUserHandler(repo domain.IUserRepository) *UserHandler {
 }
 
 func (h *UserHandler) GetByID(ctx *fiber.Ctx) error {
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
+
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	u, err := userUsecase.GetByID(id)
+	user, err := h.usecase.GetByID(id)
+	if err != nil {
+		log.Println(err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   user,
 	})
 }
 
 func (h *UserHandler) GetAll(ctx *fiber.Ctx) error {
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
 
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
@@ -71,7 +79,7 @@ func (h *UserHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	u, err := userUsecase.GetAll(limit, offset)
+	u, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -87,7 +95,6 @@ func (h *UserHandler) GetAll(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Create(ctx *fiber.Ctx) error {
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
 
 	var user domain.User
 
@@ -99,7 +106,7 @@ func (h *UserHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdUser, err := userUsecase.Create(&user)
+	createdUser, err := h.usecase.Create(&user)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -115,7 +122,6 @@ func (h *UserHandler) Create(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Update(ctx *fiber.Ctx) error {
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
 
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
@@ -133,7 +139,7 @@ func (h *UserHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := userUsecase.Update(id, &user)
+	updatedUser, err := h.usecase.Update(id, &user)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -149,7 +155,6 @@ func (h *UserHandler) Update(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Delete(ctx *fiber.Ctx) error {
-	userUsecase := usecase.NewUserUsecase(h.userRepository)
 
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
@@ -160,7 +165,7 @@ func (h *UserHandler) Delete(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = userUsecase.Delete(id)
+	err = h.usecase.Delete(id)
 	if err != nil {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
