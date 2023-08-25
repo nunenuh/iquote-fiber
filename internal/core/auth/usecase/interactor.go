@@ -9,16 +9,16 @@ import (
 )
 
 type AuthUsecase struct {
-	repo domain.IAuthorRepository
+	repo domain.IAuthRepository
 }
 
-func NewAuthUsecase(repo domain.IAuthorRepository) *AuthUsecase {
+func NewAuthUsecase(repo domain.IAuthRepository) *AuthUsecase {
 	return &AuthUsecase{
 		repo: repo,
 	}
 }
 
-func (ucase *AuthUsecase) Login(username string, password string) (*domain.Login, error) {
+func (ucase *AuthUsecase) Login(username string, password string) (*domain.Auth, error) {
 	user, err := ucase.repo.GetByUsername(username)
 	if err != nil {
 		return nil, exception.NewOtherError("Forbidden!")

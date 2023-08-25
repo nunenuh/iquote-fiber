@@ -1,6 +1,6 @@
 package domain
 
-type IAuthorRepository interface {
-	GetByUsername(username string) (*Login, error)
+type IAuthRepository interface {
+	GetByUsername(username string) (*Auth, error)
 	// GetByEmail(email string) (*Login, error)
 }
