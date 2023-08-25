@@ -94,6 +94,8 @@ func main() {
 			category.ProvideCategoryRepository,
 			quote.ProvideQuoteRepository,
 
+			auth.ProvideAuthService,
+
 			auth.ProvideAuthHandler,
 			user.ProvideUserHandler,
 			author.ProvideAuthorHandler,
