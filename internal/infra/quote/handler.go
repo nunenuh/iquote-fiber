@@ -12,15 +12,15 @@ import (
 )
 
 type QuoteHandler struct {
-	quoteRepository domain.IQuoteRepository
-	usecase         *usecase.QuoteUseCase
+	repo    domain.IQuoteRepository
+	usecase *usecase.QuoteUseCase
 }
 
-func NewQuoteHandler(quoteRepository domain.IQuoteRepository) *QuoteHandler {
-	usecase := usecase.NewQuoteUsecase(quoteRepository)
+func NewQuoteHandler(repo domain.IQuoteRepository) *QuoteHandler {
+	usecase := usecase.NewQuoteUsecase(repo)
 	return &QuoteHandler{
-		quoteRepository: quoteRepository,
-		usecase:         usecase,
+		repo:    repo,
+		usecase: usecase,
 	}
 }
 
@@ -53,37 +53,42 @@ func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {
 		panic(err)
 	}
 
-	u, err := h.usecase.GetByID(id)
+	quote, err := h.usecase.GetByID(id)
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   quote,
 	})
 }
 
+func getQueryParam(ctx *fiber.Ctx, param string, defaultValue int) int {
+	paramStr := ctx.Query(param, strconv.Itoa(defaultValue))
+	paramInt, err := strconv.Atoi(paramStr)
+	if err != nil {
+		return defaultValue
+	}
+	return paramInt
+}
+
+func (h *QuoteHandler) getLimitOffset(ctx *fiber.Ctx) (int, int, error) {
+	limit := getQueryParam(ctx, "limit", 10)
+	offset := getQueryParam(ctx, "offset", 0)
+
+	return limit, offset, nil
+}
+
 func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
 
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
+	limit, offset, err := h.getLimitOffset(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
+			"message": err.Error(),
 		})
 	}
 
-	u, err := h.usecase.GetAll(limit, offset)
+	quote, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -93,16 +98,22 @@ func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   quote,
 	})
 
 }
 
 func (h *QuoteHandler) GetByAuthorID(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("authorID")
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
 
+	limit, offset, err := h.getLimitOffset(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	idStr := ctx.Params("authorID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -111,23 +122,7 @@ func (h *QuoteHandler) GetByAuthorID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
-		})
-	}
-
-	u, err := h.usecase.GetByAuthorID(id, limit, offset)
+	quote, err := h.usecase.GetByAuthorID(id, limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -138,12 +133,12 @@ func (h *QuoteHandler) GetByAuthorID(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status":  "success",
 		"message": "Like quote successful",
-		"data":    u,
+		"data":    quote,
 	})
 }
 
 func (h *QuoteHandler) Like(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
 
 	quoteIDStr := ctx.Params("quoteID")
 	quoteID, err := strconv.Atoi(quoteIDStr)
@@ -158,7 +153,7 @@ func (h *QuoteHandler) Like(ctx *fiber.Ctx) error {
 	claims := user.Claims.(jwt.MapClaims)
 	userID := int(claims["user_id"].(float64))
 
-	u, err := h.usecase.Like(quoteID, userID)
+	quote, err := h.usecase.Like(quoteID, userID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -169,12 +164,12 @@ func (h *QuoteHandler) Like(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status":  "success",
 		"message": "Like quote successful",
-		"data":    u,
+		"data":    quote,
 	})
 }
 
 func (h *QuoteHandler) Unlike(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
+	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
 
 	quoteIDStr := ctx.Params("quoteID")
 	quoteID, err := strconv.Atoi(quoteIDStr)
@@ -189,7 +184,7 @@ func (h *QuoteHandler) Unlike(ctx *fiber.Ctx) error {
 	claims := user.Claims.(jwt.MapClaims)
 	userID := int(claims["user_id"].(float64))
 
-	u, err := h.usecase.Unlike(quoteID, userID)
+	quote, err := h.usecase.Unlike(quoteID, userID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -200,34 +195,21 @@ func (h *QuoteHandler) Unlike(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status":  "success",
 		"message": "Like quote successful",
-		"data":    u,
+		"data":    quote,
 	})
 }
 
 func (h *QuoteHandler) GetByAuthorName(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
-
 	name := ctx.Params("authorName")
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
+	limit, offset, err := h.getLimitOffset(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
+			"message": err.Error(),
 		})
 	}
 
-	u, err := h.usecase.GetByAuthorName(name, limit, offset)
+	quote, err := h.usecase.GetByAuthorName(name, limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -237,18 +219,13 @@ func (h *QuoteHandler) GetByAuthorName(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   quote,
 	})
 
 }
 
 func (h *QuoteHandler) GetByCategoryID(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
-
 	idStr := ctx.Params("categoryID")
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -257,23 +234,15 @@ func (h *QuoteHandler) GetByCategoryID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
+	limit, offset, err := h.getLimitOffset(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
+			"message": err.Error(),
 		})
 	}
 
-	u, err := h.usecase.GetByCategoryID(id, limit, offset)
+	quote, err := h.usecase.GetByCategoryID(id, limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -283,35 +252,23 @@ func (h *QuoteHandler) GetByCategoryID(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   quote,
 	})
 
 }
 
 func (h *QuoteHandler) GetByCategoryName(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.quoteRepository)
-
 	name := ctx.Params("categoryName")
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
 
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
+	limit, offset, err := h.getLimitOffset(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
+			"message": err.Error(),
 		})
 	}
 
-	u, err := h.usecase.GetByCategoryName(name, limit, offset)
+	quote, err := h.usecase.GetByCategoryName(name, limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -321,7 +278,7 @@ func (h *QuoteHandler) GetByCategoryName(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   u,
+		"data":   quote,
 	})
 
 }
