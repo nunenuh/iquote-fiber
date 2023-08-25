@@ -29,7 +29,7 @@ func (r *authorRepository) GetAll(limit int, offset int) ([]*domain.Author, erro
 	var authorModel []model.Author
 	result := db.Offset(offset).Limit(limit).Find(&authorModel)
 	if result.Error != nil {
-		panic(result.Error)
+		return nil, result.Error
 	}
 
 	out := r.Mapper.ToEntityList(authorModel)
