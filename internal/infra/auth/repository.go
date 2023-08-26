@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
 	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
@@ -46,7 +45,6 @@ func (r *authRepository) GetByUsername(username string) (*domain.Auth, error) {
 		}
 		return nil, result.Error
 	}
-	log.Printf("Password from repo: %s", user.Password)
 
 	out := r.Mapper.ToEntityWithPassword(&user)
 	return out, nil
