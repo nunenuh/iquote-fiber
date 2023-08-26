@@ -36,15 +36,6 @@ func (ucase *AuthUsecase) Login(username string, password string) (string, error
 	return tokenString, nil
 }
 
-func (ucase *AuthUsecase) GenerateToken(auth domain.Auth) (string, error) {
-	tokenString, err := ucase.svc.GenerateToken(auth)
-	if err != nil {
-		return "", exception.NewServiceError("Failed to generate token!")
-	}
-
-	return tokenString, nil
-}
-
 func (ucase *AuthUsecase) RefreshToken(token string) (string, error) {
 	tokenString, err := ucase.svc.RefreshToken(token)
 	if err != nil {
