@@ -4,78 +4,217 @@ import (
 	"errors"
 	"testing"
 
-	// "github.com/nunenuh/iquote-fiber/internal/app/usecase"
 	"github.com/nunenuh/iquote-fiber/internal/core/user/domain"
-	// "github.com/nunenuh/iquote-fiber/internal/core/user/usecase"
+	"github.com/nunenuh/iquote-fiber/internal/core/utils/exception"
 	"github.com/stretchr/testify/assert"
 )
 
-type UserRepositoryMock struct {
-	GetByIDFunc       func(ID int) (*domain.User, error)
-	GetByUsernameFunc func(username string) (*domain.User, error)
-	GetByEmailFunc    func(email string) (*domain.User, error)
-	GetAllFunc        func(limit int, offset int) ([]*domain.User, error)
-	CreateFunc        func(user *domain.User) (*domain.User, error)
-	UpdateFunc        func(ID int, user *domain.User) (*domain.User, error)
-	DeleteFunc        func(ID int) error
+func TestUserUsecaseGetAll(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	expectedUsers := []*domain.User{
+		{ID: 1, Username: "user1", FullName: "NameUser1", Email: "johndoe@example.com", IsActive: true},
+		{ID: 2, Username: "user2", FullName: "NameUser2", Email: "johndoe@example.com", IsActive: true},
+	}
+
+	mockRepo.On("GetAll", 10, 0).Return(expectedUsers, nil)
+
+	users, err := uc.GetAll(10, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedUsers, users)
 }
 
-func (m *UserRepositoryMock) GetByID(ID int) (*domain.User, error) {
-	return m.GetByIDFunc(ID)
+func TestUserUsecaseGetByID(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	expectedUser := &domain.User{ID: 1, FullName: "User1"}
+
+	mockRepo.On("GetByID", 1).Return(expectedUser, nil)
+
+	user, err := uc.GetByID(1)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedUser, user)
 }
 
-func (m *UserRepositoryMock) GetByUsername(username string) (*domain.User, error) {
-	return m.GetByUsernameFunc(username)
+func TestUserUsecaseGetByEmail(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	emailTest := "test@gmail.com"
+	expectedUser := &domain.User{
+		FullName: "myname",
+		Username: "myname",
+		Email:    emailTest,
+	}
+
+	mockRepo.On("GetByEmail", emailTest).Return(expectedUser, nil)
+
+	user, err := uc.GetByEmail(emailTest)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedUser, user)
 }
 
-func (m *UserRepositoryMock) GetByEmail(email string) (*domain.User, error) {
-	return m.GetByEmailFunc(email)
+func TestUserUsecaseGetByUsername(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	usernameTest := "username1"
+	expectedUser := &domain.User{
+		FullName: "myname",
+		Username: usernameTest,
+		Email:    "test@gmail.com",
+	}
+
+	mockRepo.On("GetByUsername", usernameTest).Return(expectedUser, nil)
+
+	user, err := uc.GetByUsername(usernameTest)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedUser, user)
 }
 
-func (m *UserRepositoryMock) GetAll(limit int, offset int) ([]*domain.User, error) {
-	return m.GetAllFunc(limit, offset)
+func TestUserUsecaseCreate(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	newUser := &domain.User{
+		FullName: "User1",
+		Username: "description",
+		Email:    "test2@gmail.com",
+	}
+
+	mockRepo.On("Create", newUser).Return(newUser, nil)
+
+	user, err := uc.Create(newUser)
+	assert.NoError(t, err)
+	assert.Equal(t, newUser, user)
 }
 
-func (m *UserRepositoryMock) Create(user *domain.User) (*domain.User, error) {
-	return m.CreateFunc(user)
+func TestUserUsecaseCreateErrorValidation(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	newUser := &domain.User{} // This user should fail validation
+
+	user, err := uc.Create(newUser)
+	assert.Error(t, err)
+	// Check if the error is of the desired type
+	appErr, ok := err.(exception.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, exception.ValidatorError, appErr.Type)
+
+	assert.Nil(t, user)
 }
 
-func (m *UserRepositoryMock) Update(ID int, user *domain.User) (*domain.User, error) {
-	return m.UpdateFunc(ID, user)
+func TestUserUsecaseCreateErrorRepository(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	newUser := &domain.User{
+		FullName: "User1",
+		Username: "description",
+		Email:    "test2@gmail.com",
+	}
+
+	mockRepo.On("Create", newUser).Return((*domain.User)(nil), errors.New("create error"))
+
+	user, err := uc.Create(newUser)
+	assert.Error(t, err)
+
+	// Check if the error is of the desired type
+	appErr, ok := err.(exception.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, exception.RepositoryError, appErr.Type)
+
+	assert.Nil(t, user)
 }
 
-func (m *UserRepositoryMock) Delete(ID int) error {
-	return m.DeleteFunc(ID)
+func TestUserUsecaseUpdate(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	updatedUser := &domain.User{
+		ID:       1,
+		FullName: "User1",
+		Username: "user1",
+		Email:    "test2@gmail.com",
+	}
+
+	mockRepo.On("Update", 1, updatedUser).Return(updatedUser, nil)
+
+	user, err := uc.Update(1, updatedUser)
+	assert.NoError(t, err)
+	assert.Equal(t, updatedUser, user)
 }
 
-func TestUserUsecase_GetByID(t *testing.T) {
-	t.Run("User found", func(t *testing.T) {
-		expectedUser := &domain.User{ID: 1, FullName: "John Doe"}
-		repo := &UserRepositoryMock{
-			GetByIDFunc: func(ID int) (*domain.User, error) {
-				return expectedUser, nil
-			},
-		}
-		usecase := NewUserUsecase(repo)
+func TestUserUsecaseUpdateErrorRepository(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
 
-		user, err := usecase.GetByID(1)
+	updatedUser := &domain.User{
+		ID:       1,
+		FullName: "User1",
+		Username: "user1",
+		Email:    "test2@gmail.com",
+	}
 
-		assert.NoError(t, err)
-		assert.Equal(t, expectedUser, user)
-	})
+	mockRepo.On("Update", 1, updatedUser).Return((*domain.User)(nil), errors.New("update error"))
 
-	t.Run("User not found", func(t *testing.T) {
-		repo := &UserRepositoryMock{
-			GetByIDFunc: func(ID int) (*domain.User, error) {
-				return nil, errors.New("user not found")
-			},
-		}
-		usecase := NewUserUsecase(repo)
+	user, err := uc.Update(1, updatedUser)
+	assert.Error(t, err)
 
-		user, err := usecase.GetByID(1)
+	// Check if the error is of the desired type
+	appErr, ok := err.(exception.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, exception.RepositoryError, appErr.Type)
 
-		assert.Error(t, err)
-		assert.Nil(t, user)
-		assert.EqualError(t, err, "user not found")
-	})
+	assert.Nil(t, user)
 }
+
+func TestUserUsecaseUpdateErrorValidation(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	updatedUser := &domain.User{}
+	mockRepo.On("Update", 1, updatedUser).Return((*domain.User)(nil), errors.New("update error"))
+
+	user, err := uc.Update(1, updatedUser)
+	assert.Error(t, err)
+
+	// Check if the error is of the desired type
+	appErr, ok := err.(exception.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, exception.ValidatorError, appErr.Type)
+
+	assert.Nil(t, user)
+}
+
+func TestUserUsecaseDelete(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	mockRepo.On("GetByID", 1).Return(&domain.User{ID: 1}, nil)
+	mockRepo.On("Delete", 1).Return(nil)
+
+	err := uc.Delete(1)
+	assert.NoError(t, err)
+}
+
+func TestUserUsecaseDeleteErrorRepository(t *testing.T) {
+	mockRepo := new(domain.MockUserRepository)
+	uc := NewUserUsecase(mockRepo)
+
+	mockRepo.On("GetByID", 1).Return((*domain.User)(nil), errors.New("not found"))
+	mockRepo.On("Delete", 1).Return(errors.New("not found"))
+
+	err := uc.Delete(1)
+	assert.Error(t, err)
+
+	// Check if the error is of the desired type
+	appErr, ok := err.(exception.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, exception.RepositoryError, appErr.Type)
+}
+
+// Continue with other tests...
