@@ -3,6 +3,9 @@ package config
 import (
 	"log"
 	"os"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -28,8 +31,9 @@ type Configuration struct {
 	DBMaxIdleConns string `mapstructure:"DB_MAX_IDLE_CONNS"`
 	// DBConnMaxLifetime time.Duration `mapstructure:"DB_CONN_MAX_LIFETIME"`
 
-	JWTSecret string `mapstructure:"JWT_SECRET"`
-	JWTExpire string `mapstructure:"JWT_EXPIRE"`
+	JWTSecret    string `mapstructure:"JWT_SECRET"`
+	JWTExpire    string `mapstructure:"JWT_EXPIRE"`
+	JWTExpireInt int64
 }
 
 func LoadConfig(path string) (config Configuration, err error) {
@@ -92,8 +96,35 @@ func setupConfig(config *Configuration) {
 	if config.JWTSecret == "" {
 		config.JWTSecret = os.Getenv("JWT_SECRET")
 	}
-
 	if config.JWTExpire == "" {
 		config.JWTExpire = os.Getenv("JWT_EXPIRE")
+
+		regex := regexp.MustCompile(`(\d+)([dhm])`)
+		match := regex.FindStringSubmatch(config.JWTExpire)
+		if len(match) == 3 {
+			duration, err := strconv.Atoi(match[1])
+			if err != nil {
+				panic(err)
+			}
+			unit := match[2]
+
+			switch unit {
+			case "d":
+				config.JWTExpireInt = time.Now().AddDate(0, 0, duration).Unix()
+			case "h":
+				config.JWTExpireInt = time.Now().Add(time.Hour * time.Duration(duration)).Unix()
+			case "m":
+				config.JWTExpireInt = time.Now().Add(time.Minute * time.Duration(duration)).Unix()
+			default:
+				// handle invalid unit
+				panic("Invalid unit in JWTExpire value")
+			}
+		} else {
+			// handle invalid JWTExpire value
+			panic("Invalid JWTExpire value")
+		}
+
+		log.Printf("JWT_EXPIRE: %v", config.JWTExpire)
 	}
+
 }

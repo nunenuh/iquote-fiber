@@ -2,7 +2,7 @@ package author
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
-	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
+	"github.com/nunenuh/iquote-fiber/internal/database/model"
 )
 
 type AuthorMapper struct{}

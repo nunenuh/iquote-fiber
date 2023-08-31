@@ -34,6 +34,7 @@ func (h *AuthHandler) Register(route fiber.Router) {
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
+	fmt.Printf("Login")
 
 	// Get request body.
 	request := &LoginRequest{}

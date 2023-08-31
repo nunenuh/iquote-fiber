@@ -14,14 +14,26 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"github.com/nunenuh/iquote-fiber/internal/infra"
-	"github.com/nunenuh/iquote-fiber/internal/infra/auth"
-	"github.com/nunenuh/iquote-fiber/internal/infra/author"
-	"github.com/nunenuh/iquote-fiber/internal/infra/category"
-	"github.com/nunenuh/iquote-fiber/internal/infra/config"
-	"github.com/nunenuh/iquote-fiber/internal/infra/database"
-	"github.com/nunenuh/iquote-fiber/internal/infra/quote"
-	"github.com/nunenuh/iquote-fiber/internal/infra/user"
+
+	// auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	authApi "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	authInfra "github.com/nunenuh/iquote-fiber/internal/auth/infra"
+	"github.com/nunenuh/iquote-fiber/internal/router"
+
+	authorApi "github.com/nunenuh/iquote-fiber/internal/author/api"
+	authorInfra "github.com/nunenuh/iquote-fiber/internal/author/infra"
+
+	categoryApi "github.com/nunenuh/iquote-fiber/internal/category/api"
+	categoryInfra "github.com/nunenuh/iquote-fiber/internal/category/infra"
+
+	"github.com/nunenuh/iquote-fiber/internal/database"
+	quoteApi "github.com/nunenuh/iquote-fiber/internal/quote/api"
+	quoteInfra "github.com/nunenuh/iquote-fiber/internal/quote/infra"
+
+	userApi "github.com/nunenuh/iquote-fiber/internal/user/api"
+	userInfra "github.com/nunenuh/iquote-fiber/internal/user/infra"
+
+	"github.com/nunenuh/iquote-fiber/pkg/config"
 
 	"go.uber.org/fx"
 )
@@ -31,7 +43,7 @@ func createApp(config config.Configuration) *fiber.App {
 		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
-	auth.InitAuthMiddleware(config.JWTSecret, config.JWTExpire)
+	authApi.InitAuthMiddleware(config.JWTSecret)
 	setupMiddleware(app)
 	return app
 }
@@ -88,22 +100,22 @@ func main() {
 		fx.Provide(database.ProvideDatabaseConnection()),
 		fx.Provide(
 			createApp,
-			auth.ProvideAuthRepository,
-			user.ProvideUserRepository,
-			author.ProvideAuthorRepository,
-			category.ProvideCategoryRepository,
-			quote.ProvideQuoteRepository,
+			authInfra.ProvideAuthRepository,
+			userInfra.ProvideUserRepository,
+			authorInfra.ProvideAuthorRepository,
+			categoryInfra.ProvideCategoryRepository,
+			quoteInfra.ProvideQuoteRepository,
 
-			auth.ProvideAuthService,
+			authInfra.ProvideAuthService,
 
-			auth.ProvideAuthHandler,
-			user.ProvideUserHandler,
-			author.ProvideAuthorHandler,
-			category.ProvideCategoryHandler,
-			quote.ProvideQuoteHandler,
+			authApi.ProvideAuthHandler,
+			userApi.ProvideUserHandler,
+			authorApi.ProvideAuthorHandler,
+			categoryApi.ProvideCategoryHandler,
+			quoteApi.ProvideQuoteHandler,
 		),
 		fx.Invoke(
-			infra.RegisterRoutes,
+			router.RegisterRoutes,
 			startApp,
 			// ... other invokable functions
 		),

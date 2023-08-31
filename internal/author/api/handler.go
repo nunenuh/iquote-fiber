@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
 	"github.com/nunenuh/iquote-fiber/internal/author/usecase"
 )
@@ -25,14 +26,14 @@ func ProvideAuthorHandler(repo domain.IAuthorRepository) *AuthorHandler {
 	return NewAuthorHandler(repo)
 }
 
-// func (h *AuthorHandler) Register(route fiber.Router) {
-// 	route.Use(auth.Protected())
-// 	route.Get("/list", h.GetAll)
-// 	route.Get("/:authorID", h.GetByID)
-// 	route.Post("/create", h.Create)
-// 	route.Patch("/:authorID", h.Update)
-// 	route.Delete("/:authorID", h.Delete)
-// }
+func (h *AuthorHandler) Register(route fiber.Router) {
+	route.Use(auth.Protected())
+	route.Get("/list", h.GetAll)
+	route.Get("/:authorID", h.GetByID)
+	route.Post("/create", h.Create)
+	route.Patch("/:authorID", h.Update)
+	route.Delete("/:authorID", h.Delete)
+}
 
 func (h *AuthorHandler) GetByID(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("authorID")

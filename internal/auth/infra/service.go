@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nunenuh/iquote-fiber/internal/core/auth/domain"
-	"github.com/nunenuh/iquote-fiber/internal/infra/config"
+	"github.com/nunenuh/iquote-fiber/internal/auth/domain"
+	"github.com/nunenuh/iquote-fiber/pkg/config"
 )
 
 func ProvideAuthService(cfg config.Configuration) domain.IAuthService {
@@ -44,7 +44,7 @@ func (us *authService) GenerateToken(auth domain.Auth) (string, error) {
 		return "", err
 	}
 
-	jClaims["exp"] = us.Conf.JWTExpire
+	jClaims["exp"] = us.Conf.JWTExpireInt
 
 	claims := jwt.MapClaims(jClaims)
 
@@ -83,7 +83,7 @@ func (us *authService) RefreshToken(tokenString string) (string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		claims["exp"] = us.Conf.JWTExpire
+		claims["exp"] = us.Conf.JWTExpireInt
 		newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 		return newToken.SignedString([]byte(us.Conf.JWTSecret))
 	}

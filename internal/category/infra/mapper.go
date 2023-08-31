@@ -2,7 +2,7 @@ package category
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/category/domain"
-	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
+	"github.com/nunenuh/iquote-fiber/internal/database/model"
 )
 
 type CategoryMapper struct{}

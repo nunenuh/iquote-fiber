@@ -1,4 +1,4 @@
-package category
+package user
 
 import (
 	"log"
@@ -6,47 +6,44 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
-	"github.com/nunenuh/iquote-fiber/internal/category/domain"
-	"github.com/nunenuh/iquote-fiber/internal/category/usecase"
+	"github.com/nunenuh/iquote-fiber/internal/user/domain"
+	"github.com/nunenuh/iquote-fiber/internal/user/usecase"
 )
 
-func ProvideCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
-	return NewCategoryHandler(repo)
+type UserHandler struct {
+	repo    domain.IUserRepository
+	usecase *usecase.UserUsecase
 }
 
-type CategoryHandler struct {
-	repo    domain.ICategoryRepository
-	usecase *usecase.CategoryUsecase
-}
-
-func NewCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
-	return &CategoryHandler{
+func NewUserHandler(repo domain.IUserRepository) *UserHandler {
+	return &UserHandler{
 		repo:    repo,
-		usecase: usecase.NewCategoryUsecase(repo),
+		usecase: usecase.NewUserUsecase(repo),
 	}
 }
 
-func (h *CategoryHandler) Register(route fiber.Router) {
+func (h *UserHandler) Register(route fiber.Router) {
 	route.Use(auth.Protected())
 	route.Get("/list", h.GetAll)
-	route.Get("/:categoryID", h.GetByID)
-	// route.Get("/:parentID", handler.GetByParentID)
+	route.Get("/:userID", h.GetByID)
 	route.Post("/create", h.Create)
-	route.Patch("/:categoryID", h.Update)
-	route.Delete("/:categoryID", h.Delete)
+	route.Patch("/:userID", h.Update)
+	route.Delete("/:userID", h.Delete)
 }
 
-func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("categoryID")
+func ProvideUserHandler(repo domain.IUserRepository) *UserHandler {
+	return NewUserHandler(repo)
+}
+
+func (h *UserHandler) GetByID(ctx *fiber.Ctx) error {
+
+	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid category ID",
-		})
+		panic(err)
 	}
 
-	category, err := h.usecase.GetByID(id)
+	user, err := h.usecase.GetByID(id)
 	if err != nil {
 		log.Println(err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -54,13 +51,15 @@ func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   category,
+		"data":   user,
 	})
 }
 
-func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
+func (h *UserHandler) GetAll(ctx *fiber.Ctx) error {
+
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
 
@@ -80,25 +79,26 @@ func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
 		})
 	}
 
-	categories, err := h.usecase.GetAll(limit, offset)
+	u, err := h.usecase.GetAll(limit, offset)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "Error fetching users",
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"status": "success",
-		"data":   categories,
+		"data":   u,
 	})
 
 }
 
-func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
-	var category domain.Category
+func (h *UserHandler) Create(ctx *fiber.Ctx) error {
 
-	if err := ctx.BodyParser(&category); err != nil {
+	var user domain.User
+
+	if err := ctx.BodyParser(&user); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -106,31 +106,32 @@ func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	createdCategory, err := h.usecase.Create(&category)
+	createdUser, err := h.usecase.Create(&user)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create category",
+			"message": "Failed to create user",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   createdCategory,
+		"data":   createdUser,
 	})
 }
 
-func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("categoryID")
+func (h *UserHandler) Update(ctx *fiber.Ctx) error {
+
+	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		panic(err)
 	}
 
-	category := domain.Category{}
+	user := domain.User{}
 
-	if err := ctx.BodyParser(&category); err != nil {
+	if err := ctx.BodyParser(&user); err != nil {
 		log.Printf("Parsing error: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -138,28 +139,29 @@ func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
 		})
 	}
 
-	updatedCategory, err := h.usecase.Update(id, &category)
+	updatedUser, err := h.usecase.Update(id, &user)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to create category",
+			"message": "Failed to create user",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   updatedCategory,
+		"data":   updatedUser,
 	})
 }
 
-func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("categoryID")
+func (h *UserHandler) Delete(ctx *fiber.Ctx) error {
+
+	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid category ID format",
+			"message": "Invalid user ID format",
 		})
 	}
 
@@ -168,13 +170,13 @@ func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
 		log.Printf("Deletion error: %v", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to delete category",
+			"message": "Failed to delete user",
 			"error":   err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "success",
-		"message": "Category deleted successfully",
+		"message": "User deleted successfully",
 	})
 }

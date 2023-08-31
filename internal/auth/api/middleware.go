@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"log"
+
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,6 +17,7 @@ func Protected() fiber.Handler {
 }
 
 func InitAuthMiddleware(secret string) {
+	log.Printf("InitAuthMiddleware()->JWTSecret %s", secret)
 	jwtHandler = jwtware.New(jwtware.Config{
 		ErrorHandler: jwtError,
 		SigningKey:   jwtware.SigningKey{Key: []byte(secret)},

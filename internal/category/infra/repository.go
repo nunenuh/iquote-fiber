@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nunenuh/iquote-fiber/internal/category/domain"
-	"github.com/nunenuh/iquote-fiber/internal/infra/database/model"
+	"github.com/nunenuh/iquote-fiber/internal/database/model"
 	"gorm.io/gorm"
 )
 
