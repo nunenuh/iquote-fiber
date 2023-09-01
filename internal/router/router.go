@@ -3,10 +3,10 @@ package router
 import (
 	"github.com/gofiber/fiber/v2"
 	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
-	author "github.com/nunenuh/iquote-fiber/internal/author/api"
-	category "github.com/nunenuh/iquote-fiber/internal/category/api"
-	quote "github.com/nunenuh/iquote-fiber/internal/quote/api"
-	user "github.com/nunenuh/iquote-fiber/internal/user/api"
+	author "github.com/nunenuh/iquote-fiber/internal/author/api/v1"
+	category "github.com/nunenuh/iquote-fiber/internal/category/api/v1"
+	quote "github.com/nunenuh/iquote-fiber/internal/quote/api/v1"
+	user "github.com/nunenuh/iquote-fiber/internal/user/api/v1"
 	"go.uber.org/fx"
 )
 
