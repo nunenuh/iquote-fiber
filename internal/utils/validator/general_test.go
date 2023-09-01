@@ -3,7 +3,7 @@ package validator
 import (
 	"testing"
 
-	"github.com/nunenuh/iquote-fiber/internal/core/user/domain"
+	"github.com/nunenuh/iquote-fiber/internal/user/domain"
 	"github.com/stretchr/testify/assert"
 )
 
