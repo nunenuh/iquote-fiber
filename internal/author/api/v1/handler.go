@@ -8,6 +8,7 @@ import (
 	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
 	"github.com/nunenuh/iquote-fiber/internal/author/usecase"
+	"github.com/nunenuh/iquote-fiber/pkg/webutils"
 )
 
 type AuthorHandler struct {
@@ -59,37 +60,21 @@ func (h *AuthorHandler) GetByID(ctx *fiber.Ctx) error {
 
 func (h *AuthorHandler) GetAll(ctx *fiber.Ctx) error {
 
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
+	params, err := webutils.ParsePaginationParams(ctx)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError, "Invalid pagination parameters")
 	}
 
-	u, err := h.usecase.GetAll(limit, offset)
+	authors, err := h.usecase.GetAll(params)
+	log.Print(authors)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching authors",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError, "Error fetching authors")
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   u,
-	})
+	pagination := webutils.NewPagination(params, int64(len(authors)))
+	response := webutils.NewSuccessResponse(authors, pagination)
+
+	return ctx.JSON(response)
 
 }
 
