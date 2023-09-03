@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v2"
-	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	auth "github.com/nunenuh/iquote-fiber/internal/auth/api/v1"
 	author "github.com/nunenuh/iquote-fiber/internal/author/api/v1"
 	category "github.com/nunenuh/iquote-fiber/internal/category/api/v1"
 	quote "github.com/nunenuh/iquote-fiber/internal/quote/api/v1"

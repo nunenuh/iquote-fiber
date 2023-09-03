@@ -1,4 +1,4 @@
-package auth
+package infra
 
 import (
 	"fmt"

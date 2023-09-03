@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	auth "github.com/nunenuh/iquote-fiber/internal/auth/infra"
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
 	"github.com/nunenuh/iquote-fiber/internal/author/usecase"
 	"github.com/nunenuh/iquote-fiber/internal/shared/param"

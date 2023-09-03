@@ -15,7 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 
-	authApi "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	authApi "github.com/nunenuh/iquote-fiber/internal/auth/api/v1"
 	authInfra "github.com/nunenuh/iquote-fiber/internal/auth/infra"
 	"github.com/nunenuh/iquote-fiber/internal/router"
 
@@ -42,7 +42,7 @@ func createApp(config config.Configuration) *fiber.App {
 		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
-	authApi.InitAuthMiddleware(config.JWTSecret)
+	authInfra.InitAuthMiddleware(config.JWTSecret)
 	setupMiddleware(app)
 	return app
 }
