@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/nunenuh/iquote-fiber/internal/auth/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/hash"
+	"github.com/nunenuh/iquote-fiber/internal/shared/hash"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -15,22 +15,21 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 
-	// auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
-	authApi "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	authApi "github.com/nunenuh/iquote-fiber/internal/auth/api/v1"
 	authInfra "github.com/nunenuh/iquote-fiber/internal/auth/infra"
 	"github.com/nunenuh/iquote-fiber/internal/router"
 
-	authorApi "github.com/nunenuh/iquote-fiber/internal/author/api"
+	authorApi "github.com/nunenuh/iquote-fiber/internal/author/api/v1"
 	authorInfra "github.com/nunenuh/iquote-fiber/internal/author/infra"
 
-	categoryApi "github.com/nunenuh/iquote-fiber/internal/category/api"
+	categoryApi "github.com/nunenuh/iquote-fiber/internal/category/api/v1"
 	categoryInfra "github.com/nunenuh/iquote-fiber/internal/category/infra"
 
 	"github.com/nunenuh/iquote-fiber/internal/database"
-	quoteApi "github.com/nunenuh/iquote-fiber/internal/quote/api"
+	quoteApi "github.com/nunenuh/iquote-fiber/internal/quote/api/v1"
 	quoteInfra "github.com/nunenuh/iquote-fiber/internal/quote/infra"
 
-	userApi "github.com/nunenuh/iquote-fiber/internal/user/api"
+	userApi "github.com/nunenuh/iquote-fiber/internal/user/api/v1"
 	userInfra "github.com/nunenuh/iquote-fiber/internal/user/infra"
 
 	"github.com/nunenuh/iquote-fiber/pkg/config"
@@ -43,7 +42,7 @@ func createApp(config config.Configuration) *fiber.App {
 		AppName:      "IQuote Fiber Clean Arch",
 		ServerHeader: "Fiber",
 	})
-	authApi.InitAuthMiddleware(config.JWTSecret)
+	authInfra.InitAuthMiddleware(config.JWTSecret)
 	setupMiddleware(app)
 	return app
 }

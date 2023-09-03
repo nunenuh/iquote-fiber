@@ -1,4 +1,4 @@
-package auth
+package infra
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/auth/domain"

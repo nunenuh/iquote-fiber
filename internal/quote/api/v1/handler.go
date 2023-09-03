@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	auth "github.com/nunenuh/iquote-fiber/internal/auth/infra"
 	"github.com/nunenuh/iquote-fiber/internal/quote/domain"
 	"github.com/nunenuh/iquote-fiber/internal/quote/usecase"
 )

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/nunenuh/iquote-fiber/internal/auth/domain"
+	"github.com/nunenuh/iquote-fiber/internal/auth/infra"
 	"github.com/nunenuh/iquote-fiber/internal/auth/usecase"
 )
 
@@ -28,8 +29,8 @@ func NewAuthHandler(repo domain.IAuthRepository, svc domain.IAuthService) *AuthH
 
 func (h *AuthHandler) Register(route fiber.Router) {
 	route.Post("/login", h.Login)
-	route.Get("/verify", Protected(), h.VerifyToken)
-	route.Get("/refresh", Protected(), h.RefreshToken)
+	route.Get("/verify", infra.Protected(), h.VerifyToken)
+	route.Get("/refresh", infra.Protected(), h.RefreshToken)
 
 }
 

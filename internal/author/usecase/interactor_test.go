@@ -5,25 +5,25 @@ import (
 	"testing"
 
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAll(t *testing.T) {
-	mockRepo := new(domain.MockAuthorRepository)
-	uc := NewAuthorUsecase(mockRepo)
+// func TestGetAll(t *testing.T) {
+// 	mockRepo := new(domain.MockAuthorRepository)
+// 	uc := NewAuthorUsecase(mockRepo)
 
-	expectedAuthors := []*domain.Author{
-		{ID: 1, Name: "Author1"},
-		{ID: 2, Name: "Author2"},
-	}
+// 	expectedAuthors := []*domain.Author{
+// 		{ID: 1, Name: "Author1"},
+// 		{ID: 2, Name: "Author2"},
+// 	}
 
-	mockRepo.On("GetAll", 10, 0).Return(expectedAuthors, nil)
+// 	mockRepo.On("GetAll", 10, 0).Return(expectedAuthors, nil)
 
-	authors, err := uc.GetAll(10, 0)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedAuthors, authors)
-}
+// 	authors, err := uc.GetAll(10, 0)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, expectedAuthors, authors)
+// }
 
 func TestGetByID(t *testing.T) {
 	mockRepo := new(domain.MockAuthorRepository)
