@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
 	"github.com/nunenuh/iquote-fiber/internal/shared/hash"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
 	"github.com/nunenuh/iquote-fiber/internal/shared/validator"
 	"github.com/nunenuh/iquote-fiber/internal/user/domain"
 )
@@ -20,8 +21,8 @@ func NewUserUsecase(r domain.IUserRepository) *UserUsecase {
 	}
 }
 
-func (ucase *UserUsecase) GetAll(limit int, offset int) ([]*domain.User, error) {
-	u, err := ucase.repo.GetAll(limit, offset)
+func (ucase *UserUsecase) GetAll(param *param.Param) ([]*domain.User, error) {
+	u, err := ucase.repo.GetAll(param.Limit, param.Page)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
 	}

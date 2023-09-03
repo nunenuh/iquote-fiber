@@ -1,13 +1,15 @@
 package user
 
 import (
-	"log"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
+	auth "github.com/nunenuh/iquote-fiber/internal/auth/infra"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
 	"github.com/nunenuh/iquote-fiber/internal/user/domain"
 	"github.com/nunenuh/iquote-fiber/internal/user/usecase"
+	"github.com/nunenuh/iquote-fiber/pkg/webutils"
 )
 
 type UserHandler struct {
@@ -40,85 +42,60 @@ func (h *UserHandler) GetByID(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid userID format", err.Error())
 	}
 
 	user, err := h.usecase.GetByID(id)
 	if err != nil {
-		log.Println(err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Error fetching users", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   user,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Successfully get user",
+		user,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *UserHandler) GetAll(ctx *fiber.Ctx) error {
-
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
-		})
+	param := new(param.Param)
+	if err := ctx.QueryParser(param); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Invalid pagination parameters", err.Error())
 	}
 
-	u, err := h.usecase.GetAll(limit, offset)
+	user, err := h.usecase.GetAll(param)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching users",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Error fetching users", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   u,
-	})
+	pagination := webutils.NewPagination(param, len(user))
+	response := webutils.NewSuccessResponseWithPagination(user, pagination)
+	return ctx.JSON(response)
 
 }
 
 func (h *UserHandler) Create(ctx *fiber.Ctx) error {
-
-	var user domain.User
-
-	if err := ctx.BodyParser(&user); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+	user := new(domain.User)
+	if err := ctx.BodyParser(user); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
-	createdUser, err := h.usecase.Create(&user)
+	createdUser, err := h.usecase.Create(user)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create user",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Failed to create user", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"data":   createdUser,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Successfully created user",
+		createdUser,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *UserHandler) Update(ctx *fiber.Ctx) error {
@@ -126,32 +103,27 @@ func (h *UserHandler) Update(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid user ID format", err.Error())
 	}
 
-	user := domain.User{}
-
-	if err := ctx.BodyParser(&user); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+	user := new(domain.User)
+	if err := ctx.BodyParser(user); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
-	updatedUser, err := h.usecase.Update(id, &user)
+	updatedUser, err := h.usecase.Update(id, user)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create user",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to create user", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"data":   updatedUser,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully updated user with ID:%d", id),
+		updatedUser,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *UserHandler) Delete(ctx *fiber.Ctx) error {
@@ -159,24 +131,19 @@ func (h *UserHandler) Delete(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("userID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid user ID format",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid user ID format", err.Error())
 	}
 
 	err = h.usecase.Delete(id)
 	if err != nil {
-		log.Printf("Deletion error: %v", err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to delete user",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to delete user", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  "success",
-		"message": "User deleted successfully",
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully deleted user with ID:%d", id),
+		nil,
+	)
+	return ctx.JSON(response)
 }
