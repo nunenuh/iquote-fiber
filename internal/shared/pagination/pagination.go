@@ -1,6 +1,6 @@
-package webutils
+package pagination
 
-import "github.com/nunenuh/iquote-fiber/internal/shared/param"
+import param "github.com/nunenuh/iquote-fiber/internal/shared/param"
 
 type Pagination struct {
 	CurrentPage     int      `json:"currentPage"`
@@ -12,14 +12,14 @@ type Pagination struct {
 	CursorEnd       *string  `json:"cursorEnd,omitempty"`
 }
 
-func NewPagination(params *param.Param, totalElements int) *Pagination {
+func NewPagination(param param.Param, totalElements int) *Pagination {
 	p := &Pagination{
-		CurrentPage:     params.Page,
+		CurrentPage:     int(param.Page),
 		CurrentElements: totalElements, // Assuming you want the length of authors as the current number of elements
-		SortBy:          params.SortBy,
+		SortBy:          param.SortBy,
 		TotalElements:   totalElements,
 	}
-	p.ProcessPagination(params.Limit)
+	p.ProcessPagination(param.Limit)
 	return p
 }
 

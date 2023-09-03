@@ -1,6 +1,23 @@
 package webutils
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+type QueryParameters struct {
+	Limit             int64
+	Offset            int64
+	OrderBy           string
+	OrderDirection    string
+	Fields            []string
+	Filters           map[string]interface{}
+	Search            string
+	IncludeDeleted    bool
+	LastModifiedSince time.Time
+	GroupBy           []string
+}
 
 type Param struct {
 	Page   int      `form:"page" param:"page" db:"page"`

@@ -21,6 +21,7 @@ type Meta struct {
 type MetaError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Detail  string `json:"detail"`
 }
 
 type HTTPResponse struct {
@@ -69,7 +70,35 @@ type HTTPResponse struct {
 // 	}
 // }
 
-func NewSuccessResponse(data interface{}, pagination *Pagination) *HTTPResponse {
+func NewSuccessResponseWithMessage(message string, data interface{}) *HTTPResponse {
+	return &HTTPResponse{
+		Message: HTTPMessage{
+			Title: "Success",
+			Body:  message,
+		},
+		Meta: Meta{
+			StatusCode: 200,
+			Message:    "OK",
+		},
+		Data: data,
+	}
+}
+
+func NewSuccessResponse(data interface{}) *HTTPResponse {
+	return &HTTPResponse{
+		Message: HTTPMessage{
+			Title: "Success",
+			Body:  "Request was successful.",
+		},
+		Meta: Meta{
+			StatusCode: 200,
+			Message:    "OK",
+		},
+		Data: data,
+	}
+}
+
+func NewSuccessResponseWithPagination(data interface{}, pagination *Pagination) *HTTPResponse {
 	return &HTTPResponse{
 		Message: HTTPMessage{
 			Title: "Success",
@@ -84,7 +113,7 @@ func NewSuccessResponse(data interface{}, pagination *Pagination) *HTTPResponse 
 	}
 }
 
-func NewErrorResponse(c *fiber.Ctx, statusCode int, message string) error {
+func NewErrorResponse(c *fiber.Ctx, statusCode int, message string, details string) error {
 	resp := &HTTPResponse{
 		Message: HTTPMessage{
 			Title: "Error",
@@ -93,6 +122,11 @@ func NewErrorResponse(c *fiber.Ctx, statusCode int, message string) error {
 		Meta: Meta{
 			StatusCode: statusCode,
 			Message:    message,
+			Error: &MetaError{
+				Code:    statusCode,
+				Message: message,
+				Detail:  details,
+			},
 		},
 	}
 	return c.Status(statusCode).JSON(resp)
