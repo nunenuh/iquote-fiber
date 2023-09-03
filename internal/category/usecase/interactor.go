@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/nunenuh/iquote-fiber/internal/category/domain"
 	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
 	"github.com/nunenuh/iquote-fiber/internal/shared/validator"
 )
 
@@ -19,8 +20,8 @@ func NewCategoryUsecase(r domain.ICategoryRepository) *CategoryUsecase {
 	}
 }
 
-func (ucase *CategoryUsecase) GetAll(limit int, offset int) ([]*domain.Category, error) {
-	u, err := ucase.repo.GetAll(limit, offset)
+func (ucase *CategoryUsecase) GetAll(param *param.Param) ([]*domain.Category, error) {
+	u, err := ucase.repo.GetAll(param.Limit, param.Page)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
 	}

@@ -1,13 +1,15 @@
 package category
 
 import (
-	"log"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	auth "github.com/nunenuh/iquote-fiber/internal/auth/api"
 	"github.com/nunenuh/iquote-fiber/internal/category/domain"
 	"github.com/nunenuh/iquote-fiber/internal/category/usecase"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
+	"github.com/nunenuh/iquote-fiber/pkg/webutils"
 )
 
 func ProvideCategoryHandler(repo domain.ICategoryRepository) *CategoryHandler {
@@ -40,141 +42,103 @@ func (h *CategoryHandler) GetByID(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid category ID",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid categoryID format", err.Error())
 	}
 
 	category, err := h.usecase.GetByID(id)
 	if err != nil {
-		log.Println(err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Error fetching category", err.Error())
 	}
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   category,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Successfully get category",
+		category,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *CategoryHandler) GetAll(ctx *fiber.Ctx) error {
-	limitStr := ctx.Query("limit", "10")
-	offsetStr := ctx.Query("offset", "0")
-
-	// Convert them to integers
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid limit value",
-		})
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid offset value",
-		})
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Invalid pagination parameters", err.Error())
 	}
 
-	categories, err := h.usecase.GetAll(limit, offset)
+	category, err := h.usecase.GetAll(p)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Error fetching category", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   categories,
-	})
+	pagination := webutils.NewPagination(p, len(category))
+	response := webutils.NewSuccessResponseWithPagination(category, pagination)
+
+	return ctx.JSON(response)
 
 }
 
 func (h *CategoryHandler) Create(ctx *fiber.Ctx) error {
-	var category domain.Category
-
-	if err := ctx.BodyParser(&category); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+	category := new(domain.Category)
+	if err := ctx.BodyParser(category); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
-	createdCategory, err := h.usecase.Create(&category)
+	createdCategory, err := h.usecase.Create(category)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create category",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Failed to create category", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"data":   createdCategory,
-	})
+	response := webutils.NewSuccessResponseWithMessage("Successfully created category", createdCategory)
+	return ctx.JSON(response)
 }
 
 func (h *CategoryHandler) Update(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid categoryID format", err.Error())
 	}
 
-	category := domain.Category{}
-
+	category := new(domain.Category)
 	if err := ctx.BodyParser(&category); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
-	updatedCategory, err := h.usecase.Update(id, &category)
+	updatedCategory, err := h.usecase.Update(id, category)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create category",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to create category", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"data":   updatedCategory,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully updated category with ID:%d", id),
+		updatedCategory,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *CategoryHandler) Delete(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("categoryID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid category ID format",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid category ID format", err.Error())
 	}
 
 	err = h.usecase.Delete(id)
 	if err != nil {
-		log.Printf("Deletion error: %v", err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to delete category",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to delete category", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  "success",
-		"message": "Category deleted successfully",
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully deleted category with ID:%d", id),
+		nil,
+	)
+	return ctx.JSON(response)
 }
