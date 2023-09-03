@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
 	"github.com/nunenuh/iquote-fiber/internal/user/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
 	"github.com/stretchr/testify/assert"
 )
 

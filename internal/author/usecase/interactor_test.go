@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
 	"github.com/stretchr/testify/assert"
 )
 

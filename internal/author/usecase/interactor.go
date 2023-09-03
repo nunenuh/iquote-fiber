@@ -2,9 +2,9 @@ package usecase
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/author/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
-	"github.com/nunenuh/iquote-fiber/internal/utils/validator"
-	"github.com/nunenuh/iquote-fiber/pkg/webutils"
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
+	"github.com/nunenuh/iquote-fiber/internal/shared/validator"
 )
 
 type AuthorUsecase struct {
@@ -20,7 +20,7 @@ func NewAuthorUsecase(r domain.IAuthorRepository) *AuthorUsecase {
 	}
 }
 
-func (ucase *AuthorUsecase) GetAll(params *webutils.PaginationParam) ([]*domain.Author, error) {
+func (ucase *AuthorUsecase) GetAll(params *param.Param) ([]*domain.Author, error) {
 
 	u, err := ucase.repo.GetAll(int(params.Limit), int(params.Page))
 	if err != nil {

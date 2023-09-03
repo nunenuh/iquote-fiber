@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/auth/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
-	"github.com/nunenuh/iquote-fiber/internal/utils/hash"
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/hash"
 )
 
 type AuthUsecase struct {

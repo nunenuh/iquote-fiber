@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"github.com/nunenuh/iquote-fiber/internal/quote/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
 )
 
 type QuoteUseCase struct {

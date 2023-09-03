@@ -1,10 +1,10 @@
 package usecase
 
 import (
+	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/hash"
+	"github.com/nunenuh/iquote-fiber/internal/shared/validator"
 	"github.com/nunenuh/iquote-fiber/internal/user/domain"
-	"github.com/nunenuh/iquote-fiber/internal/utils/exception"
-	"github.com/nunenuh/iquote-fiber/internal/utils/hash"
-	"github.com/nunenuh/iquote-fiber/internal/utils/validator"
 )
 
 type UserUsecase struct {
