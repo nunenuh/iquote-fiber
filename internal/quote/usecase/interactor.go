@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/nunenuh/iquote-fiber/internal/quote/domain"
 	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
 )
 
 type QuoteUseCase struct {
@@ -15,8 +16,8 @@ func NewQuoteUsecase(r domain.IQuoteRepository) *QuoteUseCase {
 	}
 }
 
-func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*domain.Quote, error) {
-	u, err := ucase.repo.GetAll(limit, offset)
+func (ucase *QuoteUseCase) GetAll(param *param.Param) ([]*domain.Quote, error) {
+	u, err := ucase.repo.GetAll(param.Limit, param.Page)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
 	}
@@ -24,8 +25,8 @@ func (ucase *QuoteUseCase) GetAll(limit int, offset int) ([]*domain.Quote, error
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) GetByAuthorName(name string, limit int, offset int) ([]*domain.Quote, error) {
-	u, err := ucase.repo.GetByAuthorName(name, limit, offset)
+func (ucase *QuoteUseCase) GetByAuthorName(name string, param *param.Param) ([]*domain.Quote, error) {
+	u, err := ucase.repo.GetByAuthorName(name, param.Limit, param.Page)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +34,8 @@ func (ucase *QuoteUseCase) GetByAuthorName(name string, limit int, offset int) (
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) GetByAuthorID(ID int, limit int, offset int) ([]*domain.Quote, error) {
-	u, err := ucase.repo.GetByAuthorID(ID, limit, offset)
+func (ucase *QuoteUseCase) GetByAuthorID(ID int, param *param.Param) ([]*domain.Quote, error) {
+	u, err := ucase.repo.GetByAuthorID(ID, param.Limit, param.Page)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +43,8 @@ func (ucase *QuoteUseCase) GetByAuthorID(ID int, limit int, offset int) ([]*doma
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) GetByCategoryName(name string, limit int, offset int) ([]*domain.Quote, error) {
-	u, err := ucase.repo.GetByCategoryName(name, limit, offset)
+func (ucase *QuoteUseCase) GetByCategoryName(name string, param *param.Param) ([]*domain.Quote, error) {
+	u, err := ucase.repo.GetByCategoryName(name, param.Limit, param.Page)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
 	}
@@ -51,8 +52,8 @@ func (ucase *QuoteUseCase) GetByCategoryName(name string, limit int, offset int)
 	return u, nil
 }
 
-func (ucase *QuoteUseCase) GetByCategoryID(ID int, limit int, offset int) ([]*domain.Quote, error) {
-	u, err := ucase.repo.GetByCategoryID(ID, limit, offset)
+func (ucase *QuoteUseCase) GetByCategoryID(ID int, param *param.Param) ([]*domain.Quote, error) {
+	u, err := ucase.repo.GetByCategoryID(ID, param.Limit, param.Page)
 	if err != nil {
 		return nil, exception.NewRepositoryError(err.Error())
 	}

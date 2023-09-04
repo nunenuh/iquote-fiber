@@ -9,6 +9,7 @@ import (
 
 	"github.com/nunenuh/iquote-fiber/internal/quote/domain"
 	"github.com/nunenuh/iquote-fiber/internal/shared/exception"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,8 +23,11 @@ func TestQuoteUsecaseGetAll(t *testing.T) {
 	}
 
 	mockRepo.On("GetAll", 10, 0).Return(expectedQuotes, nil)
+	limit := 10
+	offset := 0
+	param := &param.Param{Limit: limit, Page: offset}
 
-	quotes, err := uc.GetAll(10, 0)
+	quotes, err := uc.GetAll(param)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuotes, quotes)
 }
@@ -56,11 +60,12 @@ func TestQuoteUsecaseGetByAuthorName(t *testing.T) {
 
 	limit := 10
 	offset := 0
+	param := &param.Param{Limit: limit, Page: offset}
 	authorName := "author1"
 
 	mockRepo.On("GetByAuthorName", authorName, limit, offset).Return(expectedQuote, nil)
 
-	quote, err := uc.GetByAuthorName(authorName, limit, offset)
+	quote, err := uc.GetByAuthorName(authorName, param)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuote, quote)
 }
@@ -78,11 +83,13 @@ func TestQuoteUsecaseGetByAuthorID(t *testing.T) {
 
 	limit := 10
 	offset := 0
+	param := &param.Param{Limit: limit, Page: offset}
+
 	authorID := 2
 
 	mockRepo.On("GetByAuthorID", authorID, limit, offset).Return(expectedQuote, nil)
 
-	quote, err := uc.GetByAuthorID(authorID, limit, offset)
+	quote, err := uc.GetByAuthorID(authorID, param)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuote, quote)
 }
@@ -102,11 +109,13 @@ func TestQuoteUsecaseGetByCategoryName(t *testing.T) {
 
 	limit := 10
 	offset := 0
+	param := &param.Param{Limit: limit, Page: offset}
+
 	categoryName := "cat"
 
 	mockRepo.On("GetByCategoryName", categoryName, limit, offset).Return(expectedQuote, nil)
 
-	quote, err := uc.GetByCategoryName(categoryName, limit, offset)
+	quote, err := uc.GetByCategoryName(categoryName, param)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuote, quote)
 }
@@ -127,11 +136,13 @@ func TestQuoteUsecaseGetByCategoryID(t *testing.T) {
 
 	limit := 10
 	offset := 0
+	param := &param.Param{Limit: limit, Page: offset}
+
 	categoryID := 1
 
 	mockRepo.On("GetByCategoryID", categoryID, limit, offset).Return(expectedQuote, nil)
 
-	quote, err := uc.GetByCategoryID(categoryID, limit, offset)
+	quote, err := uc.GetByCategoryID(categoryID, param)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuote, quote)
 }

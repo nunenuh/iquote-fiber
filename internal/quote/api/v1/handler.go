@@ -1,14 +1,18 @@
 package quote
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	auth "github.com/nunenuh/iquote-fiber/internal/auth/infra"
+
 	"github.com/nunenuh/iquote-fiber/internal/quote/domain"
 	"github.com/nunenuh/iquote-fiber/internal/quote/usecase"
+	"github.com/nunenuh/iquote-fiber/internal/shared/param"
+	"github.com/nunenuh/iquote-fiber/pkg/webutils"
 )
 
 type QuoteHandler struct {
@@ -30,8 +34,8 @@ func (h *QuoteHandler) Register(route fiber.Router) {
 
 	route.Get("/author/name/:authorName", h.GetByAuthorName)
 	route.Get("/author/id/:authorID", h.GetByAuthorID)
-	route.Get("/category/name/:categoryName", h.GetByCategoryName)
-	route.Get("/category/id/:categoryID", h.GetByCategoryID)
+	route.Get("/quote/name/:quoteName", h.GetByCategoryName)
+	route.Get("/quote/id/:quoteID", h.GetByCategoryID)
 
 	route.Get("/like/:quoteID", h.Like)
 	route.Get("/unlike/:quoteID", h.Unlike)
@@ -50,273 +54,199 @@ func (h *QuoteHandler) GetByID(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		return ErrorInvalidQuoteIDFormat(ctx, err)
 	}
 
 	quote, err := h.usecase.GetByID(id)
-
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   quote,
-	})
-}
-
-func getQueryParam(ctx *fiber.Ctx, param string, defaultValue int) int {
-	paramStr := ctx.Query(param, strconv.Itoa(defaultValue))
-	paramInt, err := strconv.Atoi(paramStr)
 	if err != nil {
-		return defaultValue
+		return ErrorFetchingQuote(ctx, err)
 	}
-	return paramInt
-}
 
-func (h *QuoteHandler) getLimitOffset(ctx *fiber.Ctx) (int, int, error) {
-	limit := getQueryParam(ctx, "limit", 10)
-	offset := getQueryParam(ctx, "offset", 0)
-
-	return limit, offset, nil
+	response := webutils.NewSuccessResponseWithMessage(
+		"Successfully get quote",
+		quote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) GetAll(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
-
-	limit, offset, err := h.getLimitOffset(ctx)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return ErrorInvalidPaginationParameters(ctx, err)
 	}
 
-	quote, err := h.usecase.GetAll(limit, offset)
+	quote, err := h.usecase.GetAll(p)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Error fetching quote", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   quote,
-	})
-
+	pagination := webutils.NewPagination(p, len(quote))
+	response := webutils.NewSuccessResponseWithPagination(quote, pagination)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) GetByAuthorID(ctx *fiber.Ctx) error {
-
-	limit, offset, err := h.getLimitOffset(ctx)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return ErrorInvalidPaginationParameters(ctx, err)
 	}
 
 	idStr := ctx.Params("authorID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid authorID",
-		})
+		return ErrorInvalidQuoteIDFormat(ctx, err)
 	}
 
-	quote, err := h.usecase.GetByAuthorID(id, limit, offset)
+	quote, err := h.usecase.GetByAuthorID(id, p)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status":  "success",
-		"message": "Like quote successful",
-		"data":    quote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Like quote successful",
+		quote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) Like(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
-
 	quoteIDStr := ctx.Params("quoteID")
 	quoteID, err := strconv.Atoi(quoteIDStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid authorID",
-		})
+		log.Print(err)
+		return ErrorInvalidQuoteIDFormat(ctx, err)
 	}
 
 	user := ctx.Locals("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
-	userID := int(claims["user_id"].(float64))
+	userID := int(claims["UserID"].(float64))
 
 	quote, err := h.usecase.Like(quoteID, userID)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		log.Print(quote)
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status":  "success",
-		"message": "Like quote successful",
-		"data":    quote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Like quote successful",
+		quote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) Unlike(ctx *fiber.Ctx) error {
-	// quoteUsecase := usecase.NewQuoteUsecase(h.repo)
-
 	quoteIDStr := ctx.Params("quoteID")
 	quoteID, err := strconv.Atoi(quoteIDStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid authorID",
-		})
+		return ErrorInvalidQuoteIDFormat(ctx, err)
 	}
 
 	user := ctx.Locals("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
-	userID := int(claims["user_id"].(float64))
+	userID := int(claims["UserID"].(float64))
 
 	quote, err := h.usecase.Unlike(quoteID, userID)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status":  "success",
-		"message": "Like quote successful",
-		"data":    quote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Unlike quote successful",
+		quote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) GetByAuthorName(ctx *fiber.Ctx) error {
 	name := ctx.Params("authorName")
-	limit, offset, err := h.getLimitOffset(ctx)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return ErrorInvalidPaginationParameters(ctx, err)
 	}
 
-	quote, err := h.usecase.GetByAuthorName(name, limit, offset)
+	quote, err := h.usecase.GetByAuthorName(name, p)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   quote,
-	})
-
+	response := webutils.NewSuccessResponseWithMessage(
+		"Unlike quote successful",
+		quote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) GetByCategoryID(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("categoryID")
+	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid authorID",
-		})
+		return ErrorInvalidQuoteIDFormat(ctx, err)
+	}
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return ErrorInvalidPaginationParameters(ctx, err)
 	}
 
-	limit, offset, err := h.getLimitOffset(ctx)
+	quote, err := h.usecase.GetByCategoryID(id, p)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	quote, err := h.usecase.GetByCategoryID(id, limit, offset)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   quote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Get By Category ID successful",
+		quote,
+	)
+	return ctx.JSON(response)
 
 }
 
 func (h *QuoteHandler) GetByCategoryName(ctx *fiber.Ctx) error {
-	name := ctx.Params("categoryName")
+	name := ctx.Params("quoteName")
 
-	limit, offset, err := h.getLimitOffset(ctx)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+	p := new(param.Param)
+	if err := ctx.QueryParser(p); err != nil {
+		return ErrorInvalidPaginationParameters(ctx, err)
 	}
 
-	quote, err := h.usecase.GetByCategoryName(name, limit, offset)
+	quote, err := h.usecase.GetByCategoryName(name, p)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error fetching quotes",
-		})
+		return ErrorFetchingQuote(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"status": "success",
-		"data":   quote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Get By Category Name Successful",
+		quote,
+	)
+	return ctx.JSON(response)
 
 }
 
 func (h *QuoteHandler) Create(ctx *fiber.Ctx) error {
 
 	var quoteReq CreateQuoteRequest
-
-	if err := ctx.BodyParser(&quoteReq); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+	if err := ctx.BodyParser(quoteReq); err != nil {
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
 	quoteEntity, err := quoteReq.ToEntity()
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create quote",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Failed to create quote", err.Error())
 	}
 
 	createdQuote, err := h.usecase.Create(quoteEntity)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create quote",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusInternalServerError,
+			"Failed to create quote", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"data":   createdQuote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		"Successfully created quote",
+		createdQuote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
@@ -324,45 +254,37 @@ func (h *QuoteHandler) Update(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("quoteID")
 	quoteID, err := strconv.Atoi(idParam)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid quote ID format",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Invalid quoteID format", err.Error())
 	}
 
 	// Parse the request body
 	var quoteReq CreateQuoteRequest
 	if err := ctx.BodyParser(&quoteReq); err != nil {
-		log.Printf("Parsing error: %v", err)
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to parse request",
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to parse request", err.Error())
 	}
 
 	quoteEntity, err := quoteReq.ToEntity()
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to create quote",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(
+			ctx, fiber.StatusBadRequest, "Failed to update quote", err.Error(),
+		)
 	}
 
 	// Use the usecase to update the quote
 	updatedQuote, err := h.usecase.Update(quoteID, quoteEntity)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to update quote",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(
+			ctx, fiber.StatusBadRequest, "Failed to update quote", err.Error(),
+		)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": "success",
-		"data":   updatedQuote,
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully updated quote with ID:%d", quoteID),
+		updatedQuote,
+	)
+	return ctx.JSON(response)
 }
 
 func (h *QuoteHandler) Delete(ctx *fiber.Ctx) error {
@@ -370,24 +292,45 @@ func (h *QuoteHandler) Delete(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("quoteID")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid quote ID format",
-		})
+		return ErrorInvalidQuoteIDFormat(ctx, err)
 	}
 
 	err = h.usecase.Delete(id)
 	if err != nil {
-		log.Printf("Deletion error: %v", err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to delete quote",
-			"error":   err.Error(),
-		})
+		return webutils.NewErrorResponse(ctx, fiber.StatusBadRequest,
+			"Failed to delete quote", err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  "success",
-		"message": "Quote deleted successfully",
-	})
+	response := webutils.NewSuccessResponseWithMessage(
+		fmt.Sprintf("Successfully deleted quote with ID:%d", id),
+		nil,
+	)
+	return ctx.JSON(response)
+}
+
+func ErrorInvalidQuoteIDFormat(ctx *fiber.Ctx, err error) error {
+	return webutils.NewErrorResponse(
+		ctx,
+		fiber.StatusBadRequest,
+		"Invalid quoteID format",
+		err.Error(),
+	)
+}
+
+func ErrorFetchingQuote(ctx *fiber.Ctx, err error) error {
+	return webutils.NewErrorResponse(
+		ctx,
+		fiber.StatusInternalServerError,
+		"Error fetching quote",
+		err.Error(),
+	)
+}
+
+func ErrorInvalidPaginationParameters(ctx *fiber.Ctx, err error) error {
+	return webutils.NewErrorResponse(
+		ctx,
+		fiber.StatusBadRequest,
+		"Invalid pagination parameters",
+		err.Error(),
+	)
 }
